@@ -136,7 +136,8 @@ class Client:
             query += f'VIEW {view} '
         else:
             if len(ignored_databases) == 0:
-                raise ValueError('ignored_databases must contain at least one database e.g. system.')
+                raise ValueError(
+                    'ignored_databases must contain at least one database e.g. system.')
             query += f"ALL EXCEPT DATABASES {', '.join(ignored_databases)} "
         query += f'{"TO" if is_backup else "FROM"} {self._get_backup_path(file_path)} '
         if base_backup:
