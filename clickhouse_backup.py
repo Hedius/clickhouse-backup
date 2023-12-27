@@ -10,4 +10,6 @@ Todo:
 
 When creating a backup:
 check system.backups for the result of the backup job. (Since the query should be asymmetric iirc)
+nevermind: Backups can be synchronous (default)
+https://clickhouse.com/docs/en/operations/backup
 """
