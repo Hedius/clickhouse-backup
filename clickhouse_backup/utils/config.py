@@ -3,6 +3,7 @@ from argparse import ArgumentParser
 from pathlib import Path
 
 from dynaconf import Dynaconf, Validator
+from loguru import logger
 
 from ClickHouse.client import BackupTarget
 
@@ -35,6 +36,7 @@ def parse_config():
             Validator('backup.target', must_exist=True, cast=BackupTarget),
             Validator('backup.incremental_backups', cast=int),
             Validator('backup.retention', cast=int),
+            Validator('logging.dir', cast=Path),
         ]
     )
     match settings.backup.target:
@@ -44,6 +46,7 @@ def parse_config():
             ]
         case BackupTarget.Disk:
             target_validators = [
+                Validator('backup.dir', must_exist=True, cast=Path),
                 Validator('backup.disk', must_exist=True),
             ]
         case BackupTarget.S3:

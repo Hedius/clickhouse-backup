@@ -13,15 +13,22 @@ check system.backups for the result of the backup job. (Since the query should b
 nevermind: Backups can be synchronous (default)
 https://clickhouse.com/docs/en/operations/backup
 """
+from pathlib import Path
+
 from loguru import logger
 
 from ClickHouse.client import Client
 from utils.config import parse_config
+from utils.logging import setup_logging
 
 
 def main():
     try:
         settings = parse_config()
+
+        log_dir = settings('logging.dir', cast=Path, default=None)
+        if log_dir:
+            setup_logging(log_dir, settings('logging.level', default='INFO'))
 
         ch = Client(
             host=settings('clickhouse.host', default='localhost'),
