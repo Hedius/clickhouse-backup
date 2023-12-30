@@ -7,7 +7,7 @@ setup(
     license='GPLv3',
     author='Hedius',
     author_email='git@hedius.eu',
-    description='A simple python wrapper around clickhouse to use the BACKUP '
+    description='A python wrapper around ClickHouse to use the BACKUP '
                 'command for creating backups of your database.',
     packages=['clickhouse_backup'],
     entry_points={

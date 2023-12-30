@@ -1,3 +1,5 @@
 
 # Ignore dynaconf secret files
 .secrets.*
+
+config/config.toml
