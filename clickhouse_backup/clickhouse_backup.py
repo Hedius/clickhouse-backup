@@ -17,7 +17,7 @@ from pathlib import Path
 
 from loguru import logger
 
-from ClickHouse.client import Client
+from ClickHouse.client import BackupTarget, Client
 from utils.config import parse_config
 from utils.logging import setup_logging
 
@@ -35,7 +35,7 @@ def main():
             port=settings('clickhouse.port', cast=int, default=9000),
             user=settings('clickhouse.user', default='default'),
             password=settings('clickhouse.password', default=''),
-            backup_target=settings.backup.target,
+            backup_target=settings('backup.target', cast=BackupTarget),
             backup_dir=settings('backup.dir', default=None),
             disk=settings('backup.disk', default=None),
             s3_endpoint=settings('backup.s3.endpoint', default=None),
@@ -45,6 +45,11 @@ def main():
     except Exception as e:
         logger.exception('Error during config parsing!', e)
         exit(1)
+
+    if ch.backup_target == BackupTarget.S3:
+        logger.warning('Automatic incremental backups and retention are not '
+                       'supported when using S3 as backup target!'
+                       ' (Not implemented yet)')
 
 
 if __name__ == '__main__':
