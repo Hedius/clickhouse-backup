@@ -8,6 +8,7 @@ dir = '/var/backups/clickhouse'
 
 # 1 full backup per week by default / on every 7th run
 # 0 = full backup on every run.
-incremental_backups = 6
+# a full backup will be created every time a chain has reached x incremental backups.
+max_incremental_backups = 6
 # keep 2 full backups by default + their incrementals
-retention = 2
+max_full_backups = 2

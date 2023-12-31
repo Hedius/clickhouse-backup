@@ -1,14 +1,21 @@
+"""
+config handling for dynaconf
+"""
 import os
-from argparse import ArgumentParser
+from argparse import ArgumentParser, Namespace
 from pathlib import Path
+from typing import Tuple
 
 from dynaconf import Dynaconf, Validator
-from loguru import logger
 
 from ClickHouse.client import BackupTarget
 
 
-def parse_config():
+def parse_config() -> Tuple[Dynaconf, Namespace]:
+    """
+    Parse config with dynaconf and argparse
+    :return: 2-Tuple[Dynaconf, Namespace]
+    """
     ap = ArgumentParser(description='Create backups of your clickhouse database. '
                                     'Docs: https://github.com/Hedius/clickhouse-backup')
     ap.add_argument('-c', '--config-folder',
@@ -16,6 +23,10 @@ def parse_config():
                          'Default: /etc/clickhouse-backup',
                     dest='config_folder',
                     default='/etc/clickhouse-backup')
+    ap.add_argument('-f', '--force-full',
+                    help='Force a full backup. And ignore any rules for incremental backups.',
+                    dest='force_full',
+                    action='store_true')
 
     args = ap.parse_args()
 
@@ -59,4 +70,4 @@ def parse_config():
             target_validators = []
     settings.validators.extend(target_validators)
     settings.validators.validate_all()
-    return settings
+    return settings, args.force_full

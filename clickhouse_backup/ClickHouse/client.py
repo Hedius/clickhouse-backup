@@ -1,9 +1,15 @@
-import logging
+"""
+ClickHouse client / db actions / interactions
+"""
 import os
 from enum import Enum
+from pathlib import Path
 from typing import Optional
 
 from clickhouse_driver import Client as ClickHouseClient
+from loguru import logger
+
+from utils.datatypes import Backup, FullBackup
 
 
 class BackupTarget(Enum):
@@ -23,7 +29,7 @@ class Client:
     def __init__(self, host: str = 'localhost', port: str = '9000',
                  user: str = 'default', password: str = '',
                  backup_target: BackupTarget = BackupTarget.File,
-                 backup_dir: Optional[str] = None,
+                 backup_dir: Optional[Path] = None,
                  disk: Optional[str] = None,
                  s3_endpoint: Optional[str] = None,
                  s3_access_key_id: Optional[str] = None,
@@ -67,7 +73,7 @@ class Client:
         self._client = self._connect()
 
         self.backup_target = backup_target
-        self._backup_dir = backup_dir
+        self.backup_dir = backup_dir
         self._disk = disk
         self._s3_endpoint = s3_endpoint
         self._s3_access_key_id = s3_access_key_id
@@ -78,7 +84,7 @@ class Client:
         Open a new connection to ClickHouse.
         :return: driver socket
         """
-        logging.info('Connecting to ClickHouse...')
+        logger.info('Connecting to ClickHouse...')
         return ClickHouseClient(
             host=self._host,
             port=self._port,
@@ -86,7 +92,7 @@ class Client:
             password=self._password
         )
 
-    def _get_backup_path(self, file_path: str) -> str:
+    def _get_backup_path(self, file_path: str or Path) -> str:
         """
         Get the backup target.
         :return: backup target
@@ -94,34 +100,36 @@ class Client:
         file_path = file_path.lstrip('/')
         match self.backup_target:
             case BackupTarget.File:
-                return f"File('{self._backup_dir.rstrip('/')}/{file_path}')"
+                return f"File('{self.backup_dir.rstrip('/')}/{file_path}')"
             case BackupTarget.Disk:
                 return f"Disk({self._disk.rstrip("/")}/{file_path}')"
             case BackupTarget.S3:
                 return (f"S3('{self._s3_endpoint.rstrip('/')}/{file_path}', "
                         f"'{self._s3_access_key_id}', '{self._s3_secret_access_key}')")
 
-    def backup_command(self,
-                       file_path: str,
-                       is_backup: bool = True,
-                       table: Optional[str] = None,
-                       dictionary: Optional[str] = None,
-                       database: Optional[str] = None,
-                       temporary_table: Optional[str] = None,
-                       view: Optional[str] = None,
-                       ignored_databases: Optional[list[str]] = None,
-                       base_backup: Optional[str] = None):
+    def _backup_command(self,
+                        backup: Backup,
+                        is_backup: bool = True,
+                        table: Optional[str] = None,
+                        dictionary: Optional[str] = None,
+                        database: Optional[str] = None,
+                        temporary_table: Optional[str] = None,
+                        view: Optional[str] = None,
+                        ignored_databases: Optional[list[str]] = None,
+                        base_backup: Optional[FullBackup] = None):
         """
         Wrapper for the backup/restore command of ClickHouse.
-        :param file_path:
-        :param is_backup:
-        :param table:
-        :param dictionary:
-        :param database:
-        :param temporary_table:
-        :param view:
-        :param ignored_databases: system and information_schema are ignored by default
-        :param base_backup:
+        Only one object can be restored/backed up.
+        :param backup: backup object
+        :param is_backup: whether to restore or back up
+        :param table: table to restore
+        :param dictionary: dictionary to restore
+        :param database: database to restore
+        :param temporary_table: temp table to restore
+        :param view: view to restore
+        :param ignored_databases: databases to ignore in the process.
+            information_schema, system by default
+        :param base_backup: full backup for base
         :return:
         """
         ignored_databases = ignored_databases or ['system', 'INFORMATION_SCHEMA',
@@ -142,25 +150,27 @@ class Client:
                 raise ValueError(
                     'ignored_databases must contain at least one database e.g. system.')
             query += f"ALL EXCEPT DATABASES {', '.join(ignored_databases)} "
-        query += f'{"TO" if is_backup else "FROM"} {self._get_backup_path(file_path)} '
+        query += f'{"TO" if is_backup else "FROM"} {self._get_backup_path(backup.path)} '
         if base_backup:
             query += f'SETTINGS base_backup = {self._get_backup_path(base_backup)} '
-        # todo... will someone inject a query here? :) maybe should use the driver's query method :)
+        # todo... will someone inject a query here? :) maybe should use the driver correctly hmmm
+        logger.info(f'Creating a new backup: {backup}')
         result = self._client.execute(query)
+        logger.info(f'Created backup: {backup}')
         return result
 
     def backup(self,
-               file_path: str,
+               backup: Backup,
                table: Optional[str] = None,
                dictionary: Optional[str] = None,
                database: Optional[str] = None,
                temporary_table: Optional[str] = None,
                view: Optional[str] = None,
                ignored_databases: Optional[list[str]] = None,
-               base_backup: Optional[str] = None):
+               base_backup: Optional[FullBackup] = None):
         """
         Backup a table, dictionary, database, temporary table, view or all databases.
-        :param file_path: backup file path
+        :param backup: backup object
         :param table: table name
         :param dictionary: dictionary name
         :param database: database name
@@ -170,8 +180,8 @@ class Client:
         :param base_backup: base backup file path
         :return: backup result
         """
-        return self.backup_command(
-            file_path=file_path,
+        return self._backup_command(
+            backup=backup,
             table=table,
             dictionary=dictionary,
             database=database,
@@ -182,7 +192,7 @@ class Client:
         )
 
     def restore(self,
-                file_path: str,
+                backup: Backup,
                 table: Optional[str] = None,
                 dictionary: Optional[str] = None,
                 database: Optional[str] = None,
@@ -192,18 +202,20 @@ class Client:
                 base_backup: Optional[str] = None):
         """
         Restore a table, dictionary, database, temporary table, view or all databases.
-        :param file_path:
-        :param table:
-        :param dictionary:
-        :param database:
-        :param temporary_table:
-        :param view:
-        :param ignored_databases:
-        :param base_backup:
+        Only one object can be restored.
+        :param backup: backup object
+        :param table: table to restore
+        :param dictionary: dictionary to restore
+        :param database: database to restore
+        :param temporary_table: temp table to restore
+        :param view: view to restore
+        :param ignored_databases: databases to ignore in restoration.
+            information_schema, system by default
+        :param base_backup: full backup for base
         :return:
         """
-        return self.backup_command(
-            file_path=file_path,
+        return self._backup_command(
+            backup=backup,
             is_backup=False,
             table=table,
             dictionary=dictionary,
@@ -217,7 +229,6 @@ class Client:
     def get_backup_status(self):
         """
         Get the backup status for all backups.
-        Todo add filters to check the status of the specific backup we want.
         :return:
         """
-        return self._client.execute('SELECT * FROM system.backups')
+        return self._client.execute('SELECT * FROM `system`.backups')
