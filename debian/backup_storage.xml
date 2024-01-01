@@ -3,12 +3,12 @@
         <disks>
             <CHBackup>
                 <type>local</type>
-                <path>/var/backups/clickhouse</path>
+                <path>/var/backups/clickhouse/</path>
             </CHBackup>
         </disks>
     </storage_configuration>
     <backups>
         <allowed_disk>CHBackup</allowed_disk>
-        <allowed_path>/var/backups/clickhouse</allowed_path>
+        <allowed_path>/var/backups/clickhouse/</allowed_path>
     </backups>
 </clickhouse>
