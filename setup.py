@@ -3,6 +3,7 @@ __VERSION__ = '0.0.1'
 __EMAIL__ = 'clickhouse-backup@hedius.eu'
 __LICENSE__ = 'GPLv3'
 
+import os
 from pathlib import Path
 
 from setuptools import find_namespace_packages, setup
@@ -13,6 +14,21 @@ with open(Path(__file__).parent / 'README.md') as f:
 package_data = {
     'clickhouse_backup.data': ['*.toml', '*.service'],
 }
+
+data_files = None
+if os.environ.get('DEB_BUILD') in ('1', 'true', 'True'):
+    data_files = [
+        ('/etc/clickhouse-backup',
+         ['debian/default.toml']),
+        ('/lib/systemd/system',
+         ['debian/clickhouse-backup.service', 'debian/clickhouse-backup.timer']),
+        ('/usr/share/clickhouse-backup',
+         ['debian/backup_storage.xml',
+          # this is dirty, but stdeb will not copy them... so gotta put them somewhere.
+          'debian/clickhouse-backup.postinst',
+          'debian/clickhouse-backup.postrm'])
+    ]
+
 
 setup(
     name='clickhouse_backup',
@@ -47,14 +63,5 @@ setup(
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
     ],
-    data_files=[
-        ('/etc/clickhouse-backup', ['debian/default.toml']),
-        ('/lib/systemd/system',
-         ['debian/clickhouse-backup.service', 'debian/clickhouse-backup.timer']),
-        ('/usr/share/clickhouse-backup',
-         ['debian/backup_storage.xml',
-          # this is dirty, but stdeb wo not copy them... so gotta put them somewhere.
-          'debian/clickhouse-backup.postinst',
-          'debian/clickhouse-backup.postrm'])
-    ]
+    data_files=data_files
 )
