@@ -47,7 +47,7 @@ build-deb:
     expire_in: 1 week
 
 push-packages:
-  image: debian:stable
+  image: debian:stable-slim
   stage: deploy
   needs:
     - job: build-src
