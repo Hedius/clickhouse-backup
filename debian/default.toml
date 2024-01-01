@@ -1,10 +1,16 @@
+# Overwrite settings / or add custom settings in settings.toml
+# in the same folder!
 [clickhouse]
 user = 'default'
 passsword = ''
 
+[logging]
+dir = '/var/log/clickhouse-backup'
+
 [backup]
-target = 'File'
+target = 'Disk'
 dir = '/var/backups/clickhouse'
+disk = 'CHBackup'
 
 # 1 full backup per week by default / on every 7th run
 # 0 = full backup on every run.

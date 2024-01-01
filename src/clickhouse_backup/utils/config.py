@@ -52,12 +52,12 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
         merge_enabled=True,
         validators=[
             # Validator('clickhouse.host', must_exist=True),
-            Validator('clickhouse.port', cast=int),
+            Validator('clickhouse.port', cast=int, default=9000),
             # Validator('clickhouse.user', must_exist=True),
             # Validator('clickhouse.password', must_exist=True),
             Validator('backup.target', must_exist=True, cast=BackupTarget),
-            Validator('backup.incremental_backups', cast=int),
-            Validator('backup.retention', cast=int),
+            Validator('backup.max_incremental_backups', cast=int, default=6),
+            Validator('backup.max_full_backups', cast=int, default=2),
             Validator('logging.dir', cast=Path),
         ]
     )
