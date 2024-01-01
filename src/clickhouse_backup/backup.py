@@ -24,7 +24,7 @@ def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
     :return: dict of all existing backups
     """
     backups: Dict[datetime, FullBackup] = {}
-    files = sorted(os.listdir(backup_dir), key=lambda x: 'full' in x)
+    files = sorted(os.listdir(backup_dir), key=lambda x: 'inc' in x)
     for file in files:
         try:
             data = parse_file_name(file)
