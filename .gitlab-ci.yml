@@ -1,0 +1,69 @@
+include:
+  - template: Code-Quality.gitlab-ci.yml
+
+image: python:3.11
+stages:
+  - code quality
+  - build
+
+pylama:
+  stage: code quality
+  before_script:
+    - python -m pip install pylama[all]
+  script:
+    - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710
+code_quality:
+  stage: code quality
+
+
+# qodana:
+#   stage: code quality
+#   image:
+#      name: jetbrains/qodana-python
+#      entrypoint: [""]
+#   variables:
+#      QODANA_TOKEN: $QODANA_TOKEN
+#      QODANA_REMOTE_URL: git@$CI_SERVER_HOST:$CI_PROJECT_PATH.git
+#      QODANA_BRANCH: $CI_COMMIT_BRANCH
+#      QODANA_REVISION: $CI_COMMIT_SHA
+#      QODANA_JOB_URL: $CI_JOB_URL
+#   script:
+#      - qodana
+
+# Pylama:
+#  stage: code quality
+#  tags:
+#    - docker
+#  script:
+#    - python -m pip install pylama
+#    - pylama src
+
+.build: &build
+  image: debian:stable
+  stage: build
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+  before_script:
+    - apt update && apt install -y python3 python3-pip python3-all python3-setuptools python3-distutils
+    - pip3 install -r requirements.txt
+
+build-src:
+  <<: *build
+  script:
+    - make sdist
+    - cp dist/*.tar.gz .
+  artifacts:
+    paths:
+      - ./*.tar.gz
+    expire_in: 1 week
+
+build-deb:
+  <<: *build
+  script:
+    - apt install -y python3-stdeb dh-pyth
+    - make deb
+    - cp deb_dist/*.deb .
+  artifacts:
+    paths:
+      - ./*.deb
+    expire_in: 1 week

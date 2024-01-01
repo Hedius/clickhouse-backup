@@ -2,6 +2,8 @@ DISTRIBUTION := $(shell lsb_release -cs | tail -n 1)
 
 build:
 	python3 setup.py build
+sdist:
+	python3 setup.py sdist --formats=gztar
 install:
 	:build
 	python3 setup.py install
