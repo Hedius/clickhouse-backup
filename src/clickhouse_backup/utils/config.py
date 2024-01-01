@@ -58,7 +58,7 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
             Validator('backup.target', must_exist=True, cast=BackupTarget),
             Validator('backup.max_incremental_backups', cast=int, default=6),
             Validator('backup.max_full_backups', cast=int, default=2),
-            Validator('logging.dir'),
+            # Validator('logging.dir'),
         ]
     )
     # todo not working in debian 12 with 3.1.7

@@ -140,7 +140,7 @@ def main():
             port=settings('clickhouse.port', cast=int, default=9000),
             user=settings('clickhouse.user', default='default'),
             password=settings('clickhouse.password', default=''),
-            backup_target=settings('backup.target', cast=BackupTarget),
+            backup_target=BackupTarget(settings('backup.target', default='File')),
             backup_dir=settings('backup.dir', default=None),
             disk=settings('backup.disk', default=None),
             s3_endpoint=settings('backup.s3.endpoint', default=None),

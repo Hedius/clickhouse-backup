@@ -101,10 +101,13 @@ class Client:
             case BackupTarget.FILE:
                 return f"File('{self.backup_dir}/{file_path}')"
             case BackupTarget.DISK:
-                return f"Disk({self._disk}/{file_path}')"
+                return f"Disk('{self._disk}', '{file_path}')"
             case BackupTarget.S3:
                 return (f"S3('{self._s3_endpoint}/{file_path}', "
                         f"'{self._s3_access_key_id}', '{self._s3_secret_access_key}')")
+            case _:
+                raise ValueError(f'Invalid backup target: {self.backup_target}')
+
 
     def _backup_command(self,
                         backup: Backup,
@@ -151,7 +154,7 @@ class Client:
             query += f"ALL EXCEPT DATABASES {', '.join(ignored_databases)} "
         query += f'{"TO" if is_backup else "FROM"} {self._get_backup_path(backup.path)} '
         if base_backup:
-            query += f'SETTINGS base_backup = {self._get_backup_path(base_backup)} '
+            query += f'SETTINGS base_backup = {self._get_backup_path(base_backup.path)} '
         # todo... will someone inject a query here? :) maybe should use the driver correctly hmmm
         logger.info(f'Creating a new backup: {backup}')
         result = self._client.execute(query)
