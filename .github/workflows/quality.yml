@@ -1,6 +1,7 @@
-name: pylama
+name: build
 
-on: [ push ]
+on:
+  push:
 
 jobs:
   quality:

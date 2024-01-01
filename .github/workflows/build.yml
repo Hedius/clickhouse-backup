@@ -1,0 +1,42 @@
+name: Build
+
+on:
+  workflow_run:
+    workflows: [ "Quality" ]
+    branches: [ main ]
+    types:
+      - completed
+  release:
+    types: [ created ]
+
+jobs:
+  build:
+    runs-on: debian-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Install dependencies
+        run: |
+          apt update
+          # Build tools
+          apt install -y python3 python3-pip python3-setuptools python3-stdeb dh-python lsb-release
+          # packages
+          apt install -y python3-clickhouse-driver python3-dynaconf python3-loguru
+      - name: Build Debian package
+        run: |
+          make deb
+      - name: Archive Debian package
+        uses: actions/upload-artifact@v2
+        with:
+          name: debian-package
+          path: deb_dist/*.deb
+      - name: Upload Debian package to Release
+        if: github.event_name == 'release'
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.BUILD_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: deb_dist/*.deb
+          # asset_name: clickhouse-backup-${{ github.ref }}.deb
+          asset_content_type: application/octet-stream
