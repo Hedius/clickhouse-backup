@@ -3,6 +3,7 @@ config handling for dynaconf
 """
 import logging
 import os
+import sys
 from argparse import ArgumentParser, Namespace
 from importlib.resources import files
 from pathlib import Path
@@ -41,7 +42,7 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
                 f.write(files('clickhouse_backup.data').joinpath('default.toml').read_text())
         except Exception as e:
             logging.exception(f'Failed to create default config {args.config_folder}!', e)
-            exit(1)
+            sys.exit(1)
 
     settings = Dynaconf(
         envvar_prefix='CH_BACKUP',

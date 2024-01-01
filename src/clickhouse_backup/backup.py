@@ -2,10 +2,12 @@
 Creates backups in ClickHouse by using the BACKUP command of the DB.
 """
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+from dynaconf import Dynaconf
 from loguru import logger
 
 from clickhouse_backup.clickhouse.client import BackupTarget, Client
@@ -60,7 +62,7 @@ def get_base_backup(existing_backups: Dict[datetime, FullBackup],
     :return: FullBackup or None
     """
     if len(existing_backups) == 0:
-        return None
+        return
     newest_full_backup = existing_backups[max(existing_backups.keys())]
     if len(newest_full_backup.incremental_backups) < max_incremental_backups:
         return newest_full_backup
@@ -82,6 +84,43 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
         backup = existing_backups.pop(timestamp)
         logger.info(f'Deleting a full backup: {backup} (Too many backups)')
         backup.remove()
+
+
+def perform_backup(
+        settings: Dynaconf,
+        ch: Client,
+        existing_backups: Dict[datetime, FullBackup],
+        base_backup: Optional[FullBackup] = None):
+    """
+    Perform the backup.
+    :param settings:
+    :param ch:
+    :param existing_backups:
+    :param base_backup:
+    :return:
+    """
+    backup = (base_backup.new_incremental_backup()
+              if base_backup
+              else FullBackup(backup_dir=ch.backup_dir))
+    try:
+        ch.backup(
+            backup=backup,
+            base_backup=base_backup,
+            ignored_databases=settings('backup.ignored_databases', cast=list[str], default=None)
+        )
+    except Exception as e:
+        logger.exception('Backup failed!', e)
+        sys.exit(1)
+
+    if len(existing_backups) > 1:  # we will never delete if we only have 1 chain
+        try:
+            clean_old_backups(
+                existing_backups,
+                settings('backup.max_full_backups', cast=int, default=2)
+            )
+        except Exception as e:
+            logger.exception('Error while deleting backup', e)
+            sys.exit(1)
 
 
 def main():
@@ -110,7 +149,7 @@ def main():
         )
     except Exception as e:
         logger.exception('Error during config parsing!', e)
-        exit(1)
+        sys.exit(1)
 
     if ch.backup_target == BackupTarget.S3 or not ch.backup_dir:
         logger.warning('Automatic incremental backups and retention are not '
@@ -126,28 +165,7 @@ def main():
             settings('backup.max_incremental_backups', cast=int, default=6)
         )
 
-    backup = (base_backup.new_incremental_backup()
-              if base_backup
-              else FullBackup(backup_dir=ch.backup_dir))
-    try:
-        ch.backup(
-            backup=backup,
-            base_backup=base_backup,
-            ignored_databases=settings('backup.ignored_databases', cast=list[str], default=None)
-        )
-    except Exception as e:
-        logger.exception('Backup failed!', e)
-        exit(1)
-
-    if len(existing_backups) > 1:  # we will never delete if we only have 1 chain
-        try:
-            clean_old_backups(
-                existing_backups,
-                settings('backup.max_full_backups', cast=int, default=2)
-            )
-        except Exception as e:
-            logger.exception('Error while deleting backup', e)
-            exit(1)
+    perform_backup(settings, ch, existing_backups, base_backup)
 
 
 if __name__ == '__main__':
