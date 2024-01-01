@@ -1,13 +1,16 @@
 name: build
 
 on:
-  workflow_run:
-    workflows: [ "quality" ]
-    branches: [ main ]
-    types:
-      - completed
-  release:
-    types: [ created ]
+  push:
+    branches:
+      - NEVER
+# workflow_run:
+#   workflows: [ "quality" ]
+#   branches: [ main ]
+#   types:
+#     - completed
+# release:
+#   types: [ created ]
 
 jobs:
   build:
