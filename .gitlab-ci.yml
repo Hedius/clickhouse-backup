@@ -9,7 +9,7 @@ stages:
 pylama:
   stage: code quality
   before_script:
-    - pip3 install -r requirements.txt
+    - pip3 install --break-system-packages -r requirements.txt
     - pip3 install pylama[all]
   script:
     - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710
@@ -46,11 +46,11 @@ code_quality:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
   before_script:
     - apt update && apt install -y python3 python3-pip python3-all python3-setuptools python3-distutils
-    - pip3 install -r requirements.txt
 
 build-src:
   <<: *build
   script:
+    - pip3 install --break-system-packages -r requirements.txt
     - make sdist
     - cp dist/*.tar.gz .
   artifacts:
