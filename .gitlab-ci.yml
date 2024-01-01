@@ -5,6 +5,7 @@ image: python:3.11
 stages:
   - code quality
   - build
+  - deploy
 
 pylama:
   stage: code quality
