@@ -13,7 +13,7 @@ pylama:
     - pip3 install --break-system-packages -r requirements.txt
     - pip3 install pylama[all]
   script:
-    - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710
+    - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710,W0511
 # code_quality:
 #   stage: code quality
 

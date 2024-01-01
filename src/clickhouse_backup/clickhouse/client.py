@@ -108,7 +108,6 @@ class Client:
             case _:
                 raise ValueError(f'Invalid backup target: {self.backup_target}')
 
-
     def _backup_command(self,
                         backup: Backup,
                         is_backup: bool = True,
