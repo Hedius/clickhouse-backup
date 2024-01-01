@@ -97,7 +97,6 @@ class Client:
         Get the backup target.
         :return: backup target
         """
-        file_path = file_path
         match self.backup_target:
             case BackupTarget.File:
                 return f"File('{self.backup_dir}/{file_path}')"
