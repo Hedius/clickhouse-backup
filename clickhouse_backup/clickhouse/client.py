@@ -9,7 +9,7 @@ from typing import Optional
 from clickhouse_driver import Client as ClickHouseClient
 from loguru import logger
 
-from utils.datatypes import Backup, FullBackup
+from clickhouse_backup.utils.datatypes import Backup, FullBackup
 
 
 class BackupTarget(Enum):
@@ -97,14 +97,14 @@ class Client:
         Get the backup target.
         :return: backup target
         """
-        file_path = file_path.lstrip('/')
+        file_path = file_path
         match self.backup_target:
             case BackupTarget.File:
-                return f"File('{self.backup_dir.rstrip('/')}/{file_path}')"
+                return f"File('{self.backup_dir}/{file_path}')"
             case BackupTarget.Disk:
-                return f"Disk({self._disk.rstrip("/")}/{file_path}')"
+                return f"Disk({self._disk}/{file_path}')"
             case BackupTarget.S3:
-                return (f"S3('{self._s3_endpoint.rstrip('/')}/{file_path}', "
+                return (f"S3('{self._s3_endpoint}/{file_path}', "
                         f"'{self._s3_access_key_id}', '{self._s3_secret_access_key}')")
 
     def _backup_command(self,

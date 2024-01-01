@@ -8,7 +8,7 @@ from typing import Tuple
 
 from dynaconf import Dynaconf, Validator
 
-from ClickHouse.client import BackupTarget
+from clickhouse_backup.clickhouse.client import BackupTarget
 
 
 def parse_config() -> Tuple[Dynaconf, Namespace]:

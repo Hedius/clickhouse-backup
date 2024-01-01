@@ -8,11 +8,11 @@ from typing import Dict, Optional
 
 from loguru import logger
 
-from ClickHouse.client import BackupTarget, Client
-from utils.config import parse_config
-from utils.converters import parse_file_name
-from utils.datatypes import FullBackup, IncrementalBackup
-from utils.logging import setup_logging
+from clickhouse_backup.clickhouse.client import BackupTarget, Client
+from clickhouse_backup.utils.config import parse_config
+from clickhouse_backup.utils.converters import parse_file_name
+from clickhouse_backup.utils.datatypes import FullBackup, IncrementalBackup
+from clickhouse_backup.utils.logging import setup_logging
 
 
 def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
@@ -47,7 +47,7 @@ def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
         else:
             backups[data['base_timestamp']] = FullBackup(timestamp=data['base_timestamp'],
                                                          backup_dir=backup_dir)
-        return backups
+    return backups
 
 
 def get_base_backup(existing_backups: Dict[datetime, FullBackup],
@@ -136,7 +136,7 @@ def main():
             ignored_databases=settings('backup.ignored_databases', cast=list[str], default=None)
         )
     except Exception as e:
-        logger.critical('Backup failed!', e)
+        logger.exception('Backup failed!', e)
         exit(1)
 
     if len(existing_backups) > 1:  # we will never delete if we only have 1 chain

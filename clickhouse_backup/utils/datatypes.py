@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from loguru import logger
 
-from .converters import format_timestamp
+from clickhouse_backup.utils.converters import format_timestamp
 
 
 class Backup(ABC):
@@ -28,8 +28,8 @@ class Backup(ABC):
     def __str__(self):
         return f'Backup {self.timestamp}'
 
-    @abstractmethod
     @property
+    @abstractmethod
     def path(self) -> Path:
         """
         file name of the backup file

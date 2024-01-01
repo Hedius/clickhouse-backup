@@ -1,9 +1,11 @@
 from setuptools import setup, find_namespace_packages
 
-with open('requirements.txt') as f:
+from pathlib import Path
+root = Path(__file__).parent
+with open(root / 'requirements.txt') as f:
     requirements = f.read().splitlines()
 
-with open('README.md') as f:
+with open(root / 'README.md') as f:
     readme = f.read()
 
 setup(
@@ -19,7 +21,7 @@ setup(
     long_description_content_type='text/markdown',
     packages=find_namespace_packages(include=['clickhouse_backup.*']),
     entry_points={
-        'console_scripts': ['clickhouse-backup=clickhouse_backup.clickhouse_backup:main'],
+        'console_scripts': ['clickhouse-backup=clickhouse_backup.run:main'],
     },
     install_requires=requirements,
     classifiers=[
