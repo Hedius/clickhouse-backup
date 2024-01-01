@@ -52,9 +52,9 @@ setup(
         'console_scripts': ['clickhouse-backup=clickhouse_backup.backup:main'],
     },
     install_requires=[
-        'clickhouse-driver>=0.2.6',
-        'dynaconf>=3.2.4',
-        'loguru>=0.7.2'
+        'clickhouse-driver>=0.2.5',
+        'dynaconf>=3.1.7',
+        'loguru>=0.6.0'
     ],
     classifiers=[
         'Development Status :: 3 - Alpha',
