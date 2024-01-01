@@ -9,7 +9,8 @@ stages:
 pylama:
   stage: code quality
   before_script:
-    - python -m pip install pylama[all]
+    - pip3 install -r requirements.txt
+    - pip3 install pylama[all]
   script:
     - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710
 code_quality:
