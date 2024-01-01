@@ -54,6 +54,8 @@ push-packages:
       artifacts: true
     - job: build-deb
       artifacts: true
+  before_script:
+    - apt update && apt install -y curl
   script:
     - |+
       for f in dist/*; do
