@@ -11,7 +11,7 @@ with open(Path(__file__).parent / 'README.md') as f:
     readme = f.read()
 
 package_data = {
-    'clickhouse_backup.data': ['*.toml'],
+    'clickhouse_backup.data': ['*.toml', '*.service'],
 }
 
 setup(
@@ -46,5 +46,15 @@ setup(
         'Topic :: System :: Archiving :: Backup',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Programming Language :: Python :: 3',
+    ],
+    data_files=[
+        ('/etc/clickhouse-backup', ['debian/default.toml']),
+        ('/lib/systemd/system',
+         ['debian/clickhouse-backup.service', 'debian/clickhouse-backup.timer']),
+        ('/usr/share/clickhouse-backup',
+         ['debian/backup_storage.xml',
+          # this is dirty, but stdeb wo not copy them... so gotta put them somewhere.
+          'debian/clickhouse-backup.postinst',
+          'debian/clickhouse-backup.postrm'])
     ]
 )

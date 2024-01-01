@@ -1,0 +1,22 @@
+#!/bin/bash
+
+set -e
+
+CONF_DIR=/etc/clickhouse-backup
+LOG_DIR=/var/log/clickhouse-backup
+STORAGE_CONFIG_DST=/etc/clickhouse-server/config.d/backup_storage.xml
+
+# Function to create directories with correct permissions and ownership
+remove_directories() {
+  rm -rf "$CONF_DIR" "$LOG_DIR" "$STORAGE_CONFIG_DST"
+}
+
+# remove directories/files etc on purge
+if [ "$1" = "purge" ]; then
+  remove_directories
+fi
+
+# Let debhelper remove services etc.
+#DEBHELPER#
+
+exit 0

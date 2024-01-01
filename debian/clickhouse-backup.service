@@ -1,0 +1,12 @@
+[Unit]
+Description=ClickHouse Backup
+Documentation=https://github.com/Hedius/clickhouse-backup
+
+[Service]
+Type=oneshot
+User=clickhouse
+Group=clickhouse
+ExecStart=/usr/bin/clickhouse-backup --config=/etc/clickhouse-backup
+
+[Install]
+WantedBy=default.target

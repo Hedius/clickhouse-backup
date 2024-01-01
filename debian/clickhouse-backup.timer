@@ -1,0 +1,9 @@
+[Unit]
+Description=ClickHouse Backup Timer
+Documentation=https://github.com/Hedius/clickhouse-backup
+
+[Timer]
+OnCalendar=*-*-* 02:00:00
+
+[Install]
+WantedBy=timers.target

@@ -1,0 +1,49 @@
+#!/bin/bash
+
+set -e
+
+CONF_DIR=/etc/clickhouse-backup
+BACKUP_DIR=/var/backups/clickhouse
+LOG_DIR=/var/log/clickhouse-backup
+USER=clickhouse
+STORAGE_CONFIG_SRC=/usr/share/clickhouse-backup/backup_storage.xml
+STORAGE_CONFIG_DST=/etc/clickhouse-server/config.d/backup_storage.xml
+
+# Function to create directories with correct permissions and ownership
+create_directories() {
+    directories=("$CONF_DIR" "$BACKUP_DIR" "$LOG_DIR")
+
+    for dir in "${directories[@]}"; do
+        if [ ! -d "$dir" ]; then
+            sudo mkdir -p -m 0750 "$dir"
+        fi
+
+        sudo chown $USER: "$dir"
+    done
+}
+
+# sync storage config and restart clickhouse-server.service if needed
+sync_config_and_restart() {
+    restart_needed=0
+    if [ ! -e "$STORAGE_CONFIG_SRC" ] || [ "$STORAGE_CONFIG_SRC" -nt "$STORAGE_CONFIG_DST" ]; then
+      restart_needed=1
+      # Sync the file to /etc/clickhouse-server/config.d/backup_storage.xml
+      sudo cp -u "$STORAGE_CONFIG_SRC" "$STORAGE_CONFIG_DST"
+    fi
+
+    # Restart clickhouse-server.service if the file did not exist or changed
+    if [ $restart_needed -eq 1  ]; then
+        echo "Restarting clickhouse-server.service to apply outstanding changes" >&2
+        if ! systemctl restart clickhouse-server.service; then
+            echo "Failed to restart clickhouse-server.service! Check clickhouse!" >&2
+        fi
+    fi
+}
+
+create_directories
+sync_config_and_restart
+
+# Let debhelper deploy services etc.
+#DEBHELPER#
+
+exit 0
