@@ -1,6 +1,6 @@
-from setuptools import setup, find_namespace_packages
-
 from pathlib import Path
+
+from setuptools import setup
 
 with open(Path(__file__).parent / 'README.md') as f:
     readme = f.read()
@@ -18,7 +18,9 @@ setup(
                 'command for creating backups of your database.',
     long_description=readme,
     long_description_content_type='text/markdown',
-    packages=find_namespace_packages(include=['clickhouse_backup', 'clickhouse_backup.*']),
+    # Not needed / using auto discovery
+    # package_dir={'': 'src'},
+    # packages=find_namespace_packages(where='src', include=['clickhouse_backup*']),
     entry_points={
         'console_scripts': ['clickhouse-backup=clickhouse_backup.backup:main'],
     },

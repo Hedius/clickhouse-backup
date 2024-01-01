@@ -9,7 +9,7 @@ from typing import List, Optional
 
 from loguru import logger
 
-from clickhouse_backup.utils.converters import format_timestamp
+from .converters import format_timestamp
 
 
 class Backup(ABC):
