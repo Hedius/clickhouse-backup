@@ -1,8 +1,10 @@
 """
 config handling for dynaconf
 """
+import logging
 import os
 from argparse import ArgumentParser, Namespace
+from importlib.resources import files
 from pathlib import Path
 from typing import Tuple
 
@@ -20,9 +22,9 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
                                     'Docs: https://github.com/Hedius/clickhouse-backup')
     ap.add_argument('-c', '--config-folder',
                     help='Folder where the config files are stored. '
-                         'Default: /etc/clickhouse-backup',
-                    dest='config_folder',
-                    default='/etc/clickhouse-backup')
+                         'E.g.: /etc/clickhouse-backup',
+                    required=True,
+                    dest='config_folder')
     ap.add_argument('-f', '--force-full',
                     help='Force a full backup. And ignore any rules for incremental backups.',
                     dest='force_full',
@@ -30,8 +32,16 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
 
     args = ap.parse_args()
 
-    if not os.path.isdir(args.config_folder):
-        raise FileNotFoundError(f'Config folder {args.config_folder} does not exist!')
+    config_folder = Path(args.config_folder)
+    default_config = config_folder / 'default.toml'
+    if not os.path.isfile(default_config):
+        try:
+            config_folder.mkdir(parents=True, exist_ok=True)
+            with open(default_config, 'w') as f:
+                f.write(files('clickhouse_backup.data').joinpath('default.toml').read_text())
+        except Exception as e:
+            logging.exception(f'Failed to create default config {args.config_folder}!', e)
+            exit(1)
 
     settings = Dynaconf(
         envvar_prefix='CH_BACKUP',
