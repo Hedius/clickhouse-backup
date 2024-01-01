@@ -1,5 +1,5 @@
-include:
-  - template: Code-Quality.gitlab-ci.yml
+# include:
+#   - template: Code-Quality.gitlab-ci.yml
 
 image: python:3.11
 stages:
@@ -13,31 +13,8 @@ pylama:
     - pip3 install pylama[all]
   script:
     - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710
-code_quality:
-  stage: code quality
-
-
-# qodana:
+# code_quality:
 #   stage: code quality
-#   image:
-#      name: jetbrains/qodana-python
-#      entrypoint: [""]
-#   variables:
-#      QODANA_TOKEN: $QODANA_TOKEN
-#      QODANA_REMOTE_URL: git@$CI_SERVER_HOST:$CI_PROJECT_PATH.git
-#      QODANA_BRANCH: $CI_COMMIT_BRANCH
-#      QODANA_REVISION: $CI_COMMIT_SHA
-#      QODANA_JOB_URL: $CI_JOB_URL
-#   script:
-#      - qodana
-
-# Pylama:
-#  stage: code quality
-#  tags:
-#    - docker
-#  script:
-#    - python -m pip install pylama
-#    - pylama src
 
 .build: &build
   image: debian:stable
@@ -52,10 +29,9 @@ build-src:
   script:
     - pip3 install --break-system-packages -r requirements.txt
     - make sdist
-    - cp dist/*.tar.gz .
   artifacts:
     paths:
-      - ./*.tar.gz
+      - dist/*.tar.gz
     expire_in: 1 week
 
 build-deb:
@@ -63,8 +39,22 @@ build-deb:
   script:
     - apt install -y python3-stdeb dh-python
     - make deb
-    - cp deb_dist/*.deb .
+    - cp deb_dist/*.deb dist
   artifacts:
     paths:
-      - ./*.deb
+      - dist/*.deb
     expire_in: 1 week
+
+push-packages:
+  image: debian:stable
+  stage: deploy
+  needs:
+    - job: build-src
+      artifacts: true
+    - job: build-deb
+      artifacts: true
+  script:
+    - |+
+      for f in dist/*; do
+        curl --header "JOB-TOKEN: $CI_JOB_TOKEN" --upload-file $f "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/packages/generic/clickhouse-backup/$CI_COMMIT_TAG/file.txt"'
+      done
