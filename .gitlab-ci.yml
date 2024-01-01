@@ -38,7 +38,7 @@ build-src:
 build-deb:
   <<: *build
   script:
-    - apt install -y python3-stdeb dh-python
+    - apt install -y python3-stdeb dh-python lsb-release
     - make deb
     - cp deb_dist/*.deb dist
   artifacts:

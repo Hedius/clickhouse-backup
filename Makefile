@@ -7,7 +7,7 @@ sdist:
 install:
 	:build
 	python3 setup.py install
-build-deb:
+deb:
 	DEB_BUILD=1 python3 setup.py \
 		--command-packages=stdeb.command sdist_dsc --suite  $(DISTRIBUTION) \
 		--no-python2-scripts=True -c 10 --with-dh-systemd bdist_deb
