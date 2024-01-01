@@ -34,7 +34,6 @@ class Backup(ABC):
         """
         file name of the backup file
         """
-        pass
 
     def remove(self):
         """
@@ -73,6 +72,10 @@ class IncrementalBackup(Backup):
 class FullBackup(Backup):
     def __init__(self, timestamp: Optional[datetime] = None,
                  backup_dir: Optional[Path] = None):
+        """
+        :param timestamp: timestamp of the backup
+        :param backup_dir: directory where clickhouse stores backups
+        """
         super().__init__(timestamp, backup_dir)
         self.incremental_backups: List[IncrementalBackup] = []
 

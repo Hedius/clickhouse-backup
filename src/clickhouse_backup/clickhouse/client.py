@@ -16,8 +16,8 @@ class BackupTarget(Enum):
     """
     Represents supported backup targets.
     """
-    File = 'File'
-    Disk = 'Disk'
+    FILE = 'File'
+    DISK = 'Disk'
     S3 = 'S3'
 
 
@@ -28,7 +28,7 @@ class Client:
 
     def __init__(self, host: str = 'localhost', port: str = '9000',
                  user: str = 'default', password: str = '',
-                 backup_target: BackupTarget = BackupTarget.File,
+                 backup_target: BackupTarget = BackupTarget.FILE,
                  backup_dir: Optional[Path] = None,
                  disk: Optional[str] = None,
                  s3_endpoint: Optional[str] = None,
@@ -48,12 +48,12 @@ class Client:
         :param s3_secret_access_key: default: None
         """
         match backup_target:
-            case BackupTarget.File:
+            case BackupTarget.FILE:
                 if not backup_dir:
                     raise ValueError('backup_dir must be provided when using File backup target')
                 if not os.path.isdir(backup_dir):
                     raise FileNotFoundError(f'backup_dir {backup_dir} does not exist!')
-            case BackupTarget.Disk:
+            case BackupTarget.DISK:
                 if not disk:
                     raise ValueError('disk must be provided when using Disk backup target')
             case BackupTarget.S3:
@@ -98,9 +98,9 @@ class Client:
         :return: backup target
         """
         match self.backup_target:
-            case BackupTarget.File:
+            case BackupTarget.FILE:
                 return f"File('{self.backup_dir}/{file_path}')"
-            case BackupTarget.Disk:
+            case BackupTarget.DISK:
                 return f"Disk({self._disk}/{file_path}')"
             case BackupTarget.S3:
                 return (f"S3('{self._s3_endpoint}/{file_path}', "

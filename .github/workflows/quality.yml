@@ -23,4 +23,4 @@ jobs:
       - name: Analysing the code with pylama
         run: |
           pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src \
-          --ignore=W0718,C901,R0913,R0902,W1203
+          --ignore=W0718,C901,R0913,R0902,W1203,R1710

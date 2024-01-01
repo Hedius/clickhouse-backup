@@ -38,7 +38,7 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
     if not os.path.isfile(default_config):
         try:
             config_folder.mkdir(parents=True, exist_ok=True)
-            with open(default_config, 'w') as f:
+            with open(default_config, 'w', encoding='utf-8') as f:
                 f.write(files('clickhouse_backup.data').joinpath('default.toml').read_text())
         except Exception as e:
             logging.exception(f'Failed to create default config {args.config_folder}!', e)
@@ -62,11 +62,11 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
         ]
     )
     match settings.backup.target:
-        case BackupTarget.File:
+        case BackupTarget.FILE:
             target_validators = [
                 Validator('backup.dir', must_exist=True, cast=Path),
             ]
-        case BackupTarget.Disk:
+        case BackupTarget.DISK:
             target_validators = [
                 Validator('backup.dir', must_exist=True, cast=Path),
                 Validator('backup.disk', must_exist=True),
