@@ -48,7 +48,7 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
         envvar_prefix='CH_BACKUP',
         # environments=True,
         settings_files=['default.toml', 'config.toml'],
-        root_path=args.config_folder,
+        root_path=str(args.config_folder),
         merge_enabled=True,
         validators=[
             # Validator('clickhouse.host', must_exist=True),
@@ -58,27 +58,29 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
             Validator('backup.target', must_exist=True, cast=BackupTarget),
             Validator('backup.max_incremental_backups', cast=int, default=6),
             Validator('backup.max_full_backups', cast=int, default=2),
-            Validator('logging.dir', cast=Path),
+            Validator('logging.dir'),
         ]
     )
-    match settings.backup.target:
-        case BackupTarget.FILE:
-            target_validators = [
-                Validator('backup.dir', must_exist=True, cast=Path),
-            ]
-        case BackupTarget.DISK:
-            target_validators = [
-                Validator('backup.dir', must_exist=True, cast=Path),
-                Validator('backup.disk', must_exist=True),
-            ]
-        case BackupTarget.S3:
-            target_validators = [
-                Validator('backup.s3.endpoint', must_exist=True),
-                Validator('backup.s3.access_key_id', must_exist=True),
-                Validator('backup.s3.secret_access_key', must_exist=True),
-            ]
-        case _:
-            target_validators = []
-    settings.validators.extend(target_validators)
-    settings.validators.validate_all()
+    # todo not working in debian 12 with 3.1.7
+    # fine -> client also validates what it needs
+    # match settings.backup.target:
+    #     case BackupTarget.FILE:
+    #         target_validators = [
+    #             Validator('backup.dir', must_exist=True, cast=Path),
+    #         ]
+    #     case BackupTarget.DISK:
+    #         target_validators = [
+    #             Validator('backup.dir', must_exist=True, cast=Path),
+    #             Validator('backup.disk', must_exist=True),
+    #         ]
+    #     case BackupTarget.S3:
+    #         target_validators = [
+    #             Validator('backup.s3.endpoint', must_exist=True),
+    #             Validator('backup.s3.access_key_id', must_exist=True),
+    #             Validator('backup.s3.secret_access_key', must_exist=True),
+    #         ]
+    #     case _:
+    #         target_validators = []
+    # settings.validators.extend(target_validators)
+    # settings.validators.validate_all()
     return settings, args.force_full

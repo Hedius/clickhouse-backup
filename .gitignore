@@ -3,3 +3,4 @@
 .secrets.*
 
 config/config.toml
+/config/default.toml
