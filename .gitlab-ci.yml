@@ -38,8 +38,7 @@ build-src:
 build-deb:
   <<: *build
   script:
-    - apt install -y dh-python lsb-release
-    - pip3 install --break-system-packages git+https://github.com/Hedius/stdeb.git
+    - apt install -y python3-stdeb dh-python lsb-release
     - make deb
     - cp deb_dist/*.deb dist
   artifacts:
