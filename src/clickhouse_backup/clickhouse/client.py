@@ -181,7 +181,7 @@ class Client:
         :param base_backup: base backup file path
         :return: backup result
         """
-        return self._backup_command(
+        result = self._backup_command(
             backup=backup,
             table=table,
             dictionary=dictionary,
@@ -191,6 +191,11 @@ class Client:
             ignored_databases=ignored_databases,
             base_backup=base_backup
         )
+        (backup_id, status) = result[0]
+        logger.info(f'Backup {backup_id} status: {status}')
+        if status != 'BACKUP_CREATED':
+            raise RuntimeError(f'Backup {backup_id} failed!')
+        return result
 
     def restore(self,
                 backup: Backup,
