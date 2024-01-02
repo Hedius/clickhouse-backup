@@ -6,7 +6,7 @@ CONF_DIR=/etc/clickhouse-backup
 LOG_DIR=/var/log/clickhouse-backup
 STORAGE_CONFIG_DST=/etc/clickhouse-server/config.d/backup_storage.xml
 
-# Function to create directories with correct permissions and ownership
+# wipe all directories except the backup storage
 remove_directories() {
   rm -rf "$CONF_DIR" "$LOG_DIR" "$STORAGE_CONFIG_DST"
 }
