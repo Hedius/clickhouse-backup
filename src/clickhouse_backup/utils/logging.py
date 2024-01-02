@@ -18,9 +18,9 @@ def setup_logging(log_dir: Path or str, log_level: str):
         log_dir = Path(log_dir)
     if not os.path.isdir(log_dir):
         os.makedirs(log_dir, exist_ok=True)
-    format_string = '{time:HH:mm:ss} | {level} | {message}'
+    # format_string = '{time:HH:mm:ss} | {level} | {message}'
     logger.add(log_dir / 'clickhouse-backup.log',
-               format=format_string,
+               # format=format_string,
                rotation='00:00',
                retention='14 days',
                level=log_level,
