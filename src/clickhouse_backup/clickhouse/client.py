@@ -99,7 +99,8 @@ class Client:
         """
         match self.backup_target:
             case BackupTarget.FILE:
-                return f"File('{self.backup_dir}/{file_path}')"
+                # assuming a backup disk is defined.
+                return f"File('{file_path}')"
             case BackupTarget.DISK:
                 return f"Disk('{self._disk}', '{file_path}')"
             case BackupTarget.S3:
