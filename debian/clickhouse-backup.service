@@ -7,6 +7,3 @@ Type=oneshot
 User=clickhouse
 Group=clickhouse
 ExecStart=/usr/bin/clickhouse-backup --config=/etc/clickhouse-backup
-
-[Install]
-WantedBy=default.target
