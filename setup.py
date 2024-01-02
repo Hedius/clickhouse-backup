@@ -20,15 +20,12 @@ if os.environ.get('DEB_BUILD') in ('1', 'true', 'True'):
     data_files = [
         ('/etc/clickhouse-backup',
          ['debian/default.toml']),
-        ('/lib/systemd/system',
-         ['debian/clickhouse-backup.service', 'debian/clickhouse-backup.timer']),
+        # ('/lib/systemd/system',
+        #  ['debian/clickhouse-backup.service', 'debian/clickhouse-backup.timer']),
         ('/usr/share/clickhouse-backup',
-         ['debian/backup_storage.xml',
-          # this is dirty, but stdeb will not copy them... so gotta put them somewhere.
-          'debian/clickhouse-backup.postinst',
-          'debian/clickhouse-backup.postrm'])
+         ['debian/backup_storage.xml']),
+        ('/usr/share/doc/clickhouse-backup', ['README.md']),
     ]
-
 
 setup(
     name='clickhouse_backup',
