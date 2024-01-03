@@ -6,4 +6,4 @@ Documentation=https://github.com/Hedius/clickhouse-backup
 Type=oneshot
 User=clickhouse
 Group=clickhouse
-ExecStart=/usr/bin/clickhouse-backup --config=/etc/clickhouse-backup
+ExecStart=/usr/bin/clickhouse-backup -c /etc/clickhouse-backup
