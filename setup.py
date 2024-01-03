@@ -44,7 +44,7 @@ setup(
     packages=find_namespace_packages(where='src'),
     package_data=package_data,
     entry_points={
-        'console_scripts': ['clickhouse-backup=clickhouse_backup.backup:main'],
+        'console_scripts': ['clickhouse-backup=clickhouse_backup.run:main'],
     },
     install_requires=[
         'clickhouse-driver>=0.2.5',
