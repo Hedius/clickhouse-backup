@@ -118,7 +118,7 @@ class Client:
                         temporary_table: Optional[str] = None,
                         view: Optional[str] = None,
                         ignored_databases: Optional[list[str]] = None,
-                        base_backup: Optional[FullBackup] = None):
+                        base_backup: Optional[FullBackup] = None) -> str:
         """
         Wrapper for the backup/restore command of ClickHouse.
         Only one object can be restored/backed up.
@@ -132,7 +132,7 @@ class Client:
         :param ignored_databases: databases to ignore in the process.
             information_schema, system by default
         :param base_backup: full backup for base
-        :return:
+        :return: SQL command
         """
         ignored_databases = ignored_databases or ['system', 'INFORMATION_SCHEMA',
                                                   'information_schema']
@@ -156,10 +156,7 @@ class Client:
         if base_backup:
             query += f'SETTINGS base_backup = {self._get_backup_path(base_backup.path)} '
         # todo... will someone inject a query here? :) maybe should use the driver correctly hmmm
-        logger.info(f'Creating a new backup: {backup}')
-        result = self._client.execute(query)
-        logger.info(f'Created backup: {backup}')
-        return result
+        return query
 
     def backup(self,
                backup: Backup,
@@ -182,7 +179,7 @@ class Client:
         :param base_backup: base backup file path
         :return: backup result
         """
-        result = self._backup_command(
+        query = self._backup_command(
             backup=backup,
             table=table,
             dictionary=dictionary,
@@ -192,6 +189,9 @@ class Client:
             ignored_databases=ignored_databases,
             base_backup=base_backup
         )
+        logger.info(f'Creating a new backup: {backup}')
+        result = self._client.execute(query)
+        logger.info(f'Created backup: {backup}')
         (backup_id, status) = result[0]
         logger.info(f'Backup {backup_id} status: {status}')
         if status != 'BACKUP_CREATED':

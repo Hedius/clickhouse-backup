@@ -242,6 +242,16 @@ def restore_command(ctx, file):
         sys.exit(1)
 
     # todo: implement restore
+    query = args.ch.restore(
+        backup=backup_to_restore,
+        base_backup=None if isinstance(backup_to_restore,
+                                       FullBackup) else backup_to_restore.base_backup,
+        ignored_databases=args.settings('backup.ignored_databases', cast=List[str],
+                                        default=None)
+    )
+    print(f'Execute the following query in clickhouse-client to restore the backup:\n\n{query}')
+    print('Check the documentation of clickhouse for excluding tables/databases and '
+          'force overwriting existing data!')
 
 
 if __name__ == '__main__':
