@@ -1,4 +1,5 @@
-DISTRIBUTION := $(shell lsb_release -cs | tail -n 1)
+CODENAME := $(shell lsb_release -cs | tail -n 1)
+RELEASE := $(shell lsb_release -rs | tail -n 1)
 
 build:
 	python3 setup.py build
@@ -9,8 +10,8 @@ install:
 	python3 setup.py install
 deb:
 	DEB_BUILD=1 python3 setup.py \
-		--command-packages=stdeb.command sdist_dsc --suite  $(DISTRIBUTION) \
-		--no-python2-scripts=True -c 10 --with-dh-systemd bdist_deb
+		--command-packages=stdeb.command sdist_dsc --suite  $(CODENAME) \
+		--no-python2-scripts=True -c 10 --with-dh-systemd --debian-version $CI_JOB_ID+$(RELEASE)$(CODENAME) bdist_deb
 clean:
 	python3 setup.py clean --all
 	rm -rf dist/ dist_deb/ deb_dist/ build/ *.egg-info/
