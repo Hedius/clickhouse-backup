@@ -7,6 +7,7 @@ from datetime import datetime
 from pathlib import Path
 from typing import Dict, Optional
 
+import click
 from dynaconf import Dynaconf
 from loguru import logger
 
@@ -15,6 +16,17 @@ from clickhouse_backup.utils.config import parse_config
 from clickhouse_backup.utils.converters import parse_file_name
 from clickhouse_backup.utils.datatypes import FullBackup, IncrementalBackup
 from clickhouse_backup.utils.logging import setup_logging
+
+
+class CtxArgs:
+    """
+    Cache object for arguments between click group and commands.
+    """
+
+    def __init__(self, settings: Dynaconf, ch: Client, existing_backups: Dict[datetime, FullBackup]):
+        self.settings = settings
+        self.ch = ch
+        self.existing_backups = existing_backups
 
 
 def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
@@ -86,51 +98,21 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
         backup.remove()
 
 
-def perform_backup(
-        settings: Dynaconf,
-        ch: Client,
-        existing_backups: Dict[datetime, FullBackup],
-        base_backup: Optional[FullBackup] = None):
-    """
-    Perform the backup.
-    :param settings:
-    :param ch:
-    :param existing_backups:
-    :param base_backup:
-    :return:
-    """
-    backup = (base_backup.new_incremental_backup()
-              if base_backup
-              else FullBackup(backup_dir=ch.backup_dir))
-    try:
-        ch.backup(
-            backup=backup,
-            base_backup=base_backup,
-            ignored_databases=settings('backup.ignored_databases', cast=list[str], default=None)
-        )
-    except Exception as e:
-        logger.exception('Backup failed!', e)
-        sys.exit(1)
-
-    if len(existing_backups) > 1:  # we will never delete if we only have 1 chain
-        try:
-            clean_old_backups(
-                existing_backups,
-                settings('backup.max_full_backups', cast=int, default=2)
-            )
-        except Exception as e:
-            logger.exception('Error while deleting backup', e)
-            sys.exit(1)
-
-
-def main():
+@click.group()
+@click.option(
+    '-c',
+    '--config-folder',
+    help='Folder where the config files are stored. E.g.: /etc/clickhouse-backup',
+    required=True
+)
+@click.pass_context
+def main(ctx, config_folder):
     """
     Main program for creating backups.
     :return:
     """
     try:
-        settings, force_full = parse_config()
-
+        settings = parse_config(Path(config_folder))
         log_dir = settings('logging.dir', cast=Path, default=None)
         if log_dir:
             setup_logging(log_dir, settings('logging.level', default='INFO'))
@@ -158,14 +140,103 @@ def main():
         existing_backups = {}
     else:
         existing_backups = get_existing_backups(ch.backup_dir)
+    ctx.obj = CtxArgs(settings, ch, existing_backups)
+
+
+@main.command()
+@click.option(
+    '-f', '--force-full',
+    is_flag=True, show_default=True, default=False,
+    help='Force a full backup and ignore the rules for creating incremental backups.'
+)
+@click.pass_context
+def backup(
+        ctx,
+        force_full
+):
+    """
+    Perform the backup.
+    :return:
+    """
+    args: CtxArgs = ctx.obj
     base_backup = None
     if not force_full:
         base_backup = get_base_backup(
-            existing_backups,
-            settings('backup.max_incremental_backups', cast=int, default=6)
+            args.existing_backups,
+            args.settings('backup.max_incremental_backups', cast=int, default=6)
         )
+    new_backup = (base_backup.new_incremental_backup()
+                  if base_backup
+                  else FullBackup(backup_dir=args.ch.backup_dir))
+    try:
+        args.ch.backup(
+            backup=new_backup,
+            base_backup=base_backup,
+            ignored_databases=args.settings('backup.ignored_databases', cast=list[str], default=None)
+        )
+    except Exception as e:
+        logger.exception('Backup failed!', e)
+        sys.exit(1)
 
-    perform_backup(settings, ch, existing_backups, base_backup)
+    if len(args.existing_backups) > 1:  # we will never delete if we only have 1 chain
+        try:
+            clean_old_backups(
+                args.existing_backups,
+                args.settings('backup.max_full_backups', cast=int, default=2)
+            )
+        except Exception as e:
+            logger.exception('Error while deleting backup', e)
+            sys.exit(1)
+
+
+@main.command()
+@click.pass_context
+def list(ctx):
+    """
+
+    :return:
+    """
+    args: CtxArgs = ctx.obj
+    if len(args.existing_backups) == 0:
+        print('None! You have to create a backup first...')
+        sys.exit(1)
+    else:
+        output = 'Listing backups:\n\n'
+        for full_backup in args.existing_backups.values():
+            output += f'{full_backup} @ {full_backup.timestamp.isoformat()}'
+            for incremental_backup in full_backup.incremental_backups:
+                output += f'{incremental_backup} @ {incremental_backup.timestamp} Base: {full_backup.path}'
+            output += '\n\n'
+        print(output)
+
+
+@main.command()
+@click.pass_context
+@click.option(
+    '-f', '--file',
+    required=True,
+    help='The file to restore. Name has to fully match!'
+)
+def restore(ctx, file):
+    """
+
+    :param ctx:
+    :return:
+    """
+    args: CtxArgs = ctx.obj
+    backup_to_restore = None
+    for full_backup in args.existing_backups.values():
+        if full_backup.path == file:
+            backup_to_restore = full_backup
+            break
+        for incremental_backup in full_backup.incremental_backups:
+            if incremental_backup.path == file:
+                backup_to_restore = incremental_backup
+                break
+    if not backup_to_restore:
+        print(f'No match for {file}! Check the name!')
+        list()
+        sys.exit(1)
 
 
 if __name__ == '__main__':
