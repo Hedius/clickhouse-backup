@@ -5,7 +5,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
-from typing import Dict, Optional
+from typing import Dict, List, Optional
 
 import click
 from dynaconf import Dynaconf
@@ -23,7 +23,8 @@ class CtxArgs:
     Cache object for arguments between click group and commands.
     """
 
-    def __init__(self, settings: Dynaconf, ch: Client, existing_backups: Dict[datetime, FullBackup]):
+    def __init__(self, settings: Dynaconf, ch: Client,
+                 existing_backups: Dict[datetime, FullBackup]):
         self.settings = settings
         self.ch = ch
         self.existing_backups = existing_backups
@@ -93,9 +94,9 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
     for timestamp in sorted(existing_backups.keys()):
         if len(existing_backups) <= max_full_backups:
             break
-        backup = existing_backups.pop(timestamp)
+        x = existing_backups.pop(timestamp)
         logger.info(f'Deleting a full backup: {backup} (Too many backups)')
-        backup.remove()
+        x.remove()
 
 
 @click.group()
@@ -172,7 +173,8 @@ def backup(
         args.ch.backup(
             backup=new_backup,
             base_backup=base_backup,
-            ignored_databases=args.settings('backup.ignored_databases', cast=list[str], default=None)
+            ignored_databases=args.settings('backup.ignored_databases', cast=List[str],
+                                            default=None)
         )
     except Exception as e:
         logger.exception('Backup failed!', e)
@@ -193,7 +195,8 @@ def backup(
 @click.pass_context
 def list(ctx):
     """
-
+    List all existing backups.
+    :param ctx: click context
     :return:
     """
     args: CtxArgs = ctx.obj
@@ -205,7 +208,10 @@ def list(ctx):
         for full_backup in args.existing_backups.values():
             output += f'{full_backup} @ {full_backup.timestamp.isoformat()}'
             for incremental_backup in full_backup.incremental_backups:
-                output += f'{incremental_backup} @ {incremental_backup.timestamp} Base: {full_backup.path}'
+                output += (
+                    f'{incremental_backup} @ {incremental_backup.timestamp} '
+                    f'Base: {full_backup.path}'
+                )
             output += '\n\n'
         print(output)
 
@@ -219,8 +225,10 @@ def list(ctx):
 )
 def restore(ctx, file):
     """
-
-    :param ctx:
+    Generate the restore command for the given backup.
+    You can use the output of the list command to restore the backup.
+    :param ctx: click context
+    :param file: Full name of the backup file to restore.
     :return:
     """
     args: CtxArgs = ctx.obj
@@ -237,6 +245,8 @@ def restore(ctx, file):
         print(f'No match for {file}! Check the name!')
         list()
         sys.exit(1)
+
+    # todo: implement restore
 
 
 if __name__ == '__main__':

@@ -73,6 +73,7 @@ class FullBackup(Backup):
     """
     Represents full backups.
     """
+
     def __init__(self, timestamp: Optional[datetime] = None,
                  backup_dir: Optional[Path] = None):
         """
