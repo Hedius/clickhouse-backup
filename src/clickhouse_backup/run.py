@@ -109,10 +109,7 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
 @click.pass_context
 def main(ctx, config_folder):
     """
-    Main program for creating backups.
-    :param ctx: click context
-    :param config_folder: folder where the config files are storedj
-    :return:
+    Create and restore ClickHouse backups.
     """
     try:
         settings = parse_config(Path(config_folder))
@@ -160,9 +157,6 @@ def backup_command(
     """
     Perform a backup.
     Depending on the settings, this will create a full or incremental backup.
-    :param ctx: click context
-    :param force_full: force a full backup
-    :return:
     """
     args: CtxArgs = ctx.obj
     base_backup = None
@@ -201,8 +195,6 @@ def backup_command(
 def list_command(ctx):
     """
     List all existing backups.
-    :param ctx: click context
-    :return:
     """
     args: CtxArgs = ctx.obj
     if len(args.existing_backups) == 0:
@@ -231,10 +223,8 @@ def list_command(ctx):
 def restore_command(ctx, file):
     """
     Generate the restore command for the given backup.
-    You can use the output of the list command to restore the backup.
-    :param ctx: click context
-    :param file: Full name of the backup file to restore.
-    :return:
+    Use the command in clickhouse-client to restore the backup.
+    You can use the output of the list command to view available backups.
     """
     args: CtxArgs = ctx.obj
     backup_to_restore = None
