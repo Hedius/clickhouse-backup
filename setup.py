@@ -11,6 +11,9 @@ from setuptools import find_namespace_packages, setup
 with open(Path(__file__).parent / 'README.md') as f:
     readme = f.read()
 
+with open(Path(__file__).parent / 'requirements.txt') as f:
+    requirements = f.read()
+
 package_data = {
     'clickhouse_backup.data': ['*.toml', '*.service'],
 }
@@ -46,11 +49,7 @@ setup(
     entry_points={
         'console_scripts': ['clickhouse-backup=clickhouse_backup.run:main'],
     },
-    install_requires=[
-        'clickhouse-driver>=0.2.5',
-        'dynaconf>=3.1.7',
-        'loguru>=0.6.0'
-    ],
+    install_requires=requirements,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: System Administrators',
