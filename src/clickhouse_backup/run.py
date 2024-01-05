@@ -110,6 +110,8 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
 def main(ctx, config_folder):
     """
     Main program for creating backups.
+    :param ctx: click context
+    :param config_folder: folder where the config files are storedj
     :return:
     """
     try:
@@ -156,7 +158,10 @@ def backup_command(
         force_full
 ):
     """
-    Perform the backup.
+    Perform a backup.
+    Depending on the settings, this will create a full or incremental backup.
+    :param ctx: click context
+    :param force_full: force a full backup
     :return:
     """
     args: CtxArgs = ctx.obj
