@@ -248,7 +248,7 @@ def restore_command(ctx, file):
                 break
     if not backup_to_restore:
         print(f'No match for {file}! Check the name!')
-        list_command()
+        list_command(ctx)
         sys.exit(1)
 
     # todo: implement restore
