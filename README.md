@@ -62,6 +62,8 @@ You can use the program with the command:
 sudo -u clickhouse clickhouse-backup -c /etc/clickhouse-backup
 ```
 
+Check the makefile for different options. (E.g. building a python package)
+
 ## Configuration
 
 Configuration can be performed over configuration files and environment variables.
