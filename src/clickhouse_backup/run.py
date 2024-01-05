@@ -95,7 +95,7 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
         if len(existing_backups) <= max_full_backups:
             break
         x = existing_backups.pop(timestamp)
-        logger.info(f'Deleting a full backup: {backup} (Too many backups)')
+        logger.info(f'Deleting a full backup: {x} (Too many backups)')
         x.remove()
 
 
@@ -144,14 +144,14 @@ def main(ctx, config_folder):
     ctx.obj = CtxArgs(settings, ch, existing_backups)
 
 
-@main.command()
+@main.command('backup')
 @click.option(
     '-f', '--force-full',
     is_flag=True, show_default=True, default=False,
     help='Force a full backup and ignore the rules for creating incremental backups.'
 )
 @click.pass_context
-def backup(
+def backup_command(
         ctx,
         force_full
 ):
@@ -191,9 +191,9 @@ def backup(
             sys.exit(1)
 
 
-@main.command()
+@main.command('list')
 @click.pass_context
-def list(ctx):
+def list_command(ctx):
     """
     List all existing backups.
     :param ctx: click context
@@ -216,14 +216,14 @@ def list(ctx):
         print(output)
 
 
-@main.command()
+@main.command('restore')
 @click.pass_context
 @click.option(
     '-f', '--file',
     required=True,
     help='The file to restore. Name has to fully match!'
 )
-def restore(ctx, file):
+def restore_command(ctx, file):
     """
     Generate the restore command for the given backup.
     You can use the output of the list command to restore the backup.
@@ -243,7 +243,7 @@ def restore(ctx, file):
                 break
     if not backup_to_restore:
         print(f'No match for {file}! Check the name!')
-        list()
+        list_command()
         sys.exit(1)
 
     # todo: implement restore
