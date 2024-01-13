@@ -8,6 +8,8 @@ command to create backups and to restore from them.
 
 Meant for single-node setups. Not tested with clusters.
 
+![Screenshot usage](.img/screenshot_usage.png)
+
 ## Features
 
 * Support for file, disk and S3 storage backends.
@@ -60,15 +62,20 @@ The timer runs every night at 02:00 am.
 You can use the program with the command:
 
 ```sh
-sudo -u clickhouse clickhouse-backup -c /etc/clickhouse-backup
+# /etc/clickhouse-backup as the config folder
+sudo -u clickhouse clickhouse-backup
+# or with a custom config folder
+sudo -u clickhouse clickhouse-backup -c YOUR_CONFIG_FOLDER
 ```
+Consider running at as the user clickhouse since the timer also runs with that user.
 
 Check the makefile for different options. (E.g. building a python package)
 
 ## Configuration
 
 Configuration can be performed over configuration files and environment variables.
-The config folder has to be provided over the '-c' parameter.
+The config folder is `/etc/clickhouse-backup` by default
+and can be adjusted over the '-c' parameter.
 The default config is automatically saved to `default.toml` in the config folder.
 You may edit this file or create a `config.toml` in the same folder to overwrite the default settings.
 
@@ -127,11 +134,15 @@ secret_access_key = ''
 
 ```
 Usage: clickhouse-backup [OPTIONS] COMMAND [ARGS]...
-    Create and restore backups for ClickHouse.
+
+  Create and restore ClickHouse backups. Help and documentation are available
+  at https://github.com/Hedius/clickhouse-backup.
 
 Options:
-  -c, --config-folder TEXT  Folder where the config files are stored. E.g.:
-                            /etc/clickhouse-backup  [required]
+  -c, --config-folder TEXT  Folder where the config files are stored.
+                            /etc/clickhouse-backup by default. Make sure that
+                            the user has read and write access to the folder.
+  --version                 Show the version and exit.
   --help                    Show this message and exit.
 
 Commands:
@@ -170,8 +181,9 @@ Options:
 ```
 Usage: clickhouse-backup restore [OPTIONS]
 
-  Generate the restore command for the given backup. You can use the output of
-  the list command to view available backups.
+  Generate the restore command for the given backup. Use the command in
+  clickhouse-client to restore the backup. You can use the output of the list
+  command to view available backups.
 
 Options:
   -f, --file TEXT  The file to restore. Name has to fully match!  [required]
