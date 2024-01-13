@@ -111,14 +111,16 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
 @click.option(
     '-c',
     '--config-folder',
-    help='Folder where the config files are stored. E.g.: /etc/clickhouse-backup',
-    required=True
+    help='Folder where the config files are stored. /etc/clickhouse-backup by default.'
+         ' Make sure that the user has read and write access to the folder.',
+    default='/etc/clickhouse-backup',
 )
 @click.pass_context
 @click.version_option()
 def main(ctx, config_folder):
     """
     Create and restore ClickHouse backups.
+    Help and documentation are available at https://github.com/Hedius/clickhouse-backup.
     """
     try:
         settings = parse_config(Path(config_folder))
@@ -165,7 +167,7 @@ def backup_command(
 ):
     """
     Perform a backup.
-    Depending on the settings, this will create a full or incremental backup.
+    Depending on the settings, this will create a full or an incremental backup.
     """
     args: CtxArgs = ctx.obj
     base_backup = None
@@ -218,7 +220,7 @@ def list_command(ctx):
         newest_backup = None
         for full_backup in sorted(args.existing_backups.values(), key=lambda x: x.timestamp):
             newest_backup = full_backup
-            output += click.style(f'{full_backup} @ {full_backup.timestamp}\n\t', fg='cyan')
+            output += click.style(f'{full_backup} @ {full_backup.timestamp_str}\n\t', fg='cyan')
             if len(full_backup.incremental_backups) == 0:
                 output += click.style('No incremental backups.', fg='red')
             else:
@@ -231,8 +233,8 @@ def list_command(ctx):
                 )
             output += '\n\n'
         output += (
-            'To get the restore DB command for a backup call the restore command with the '
-            'file name of a backup as the argument.\n'
+            'Call the restore command with the file name of a backup as the argument '
+            'to get the restore DB command for a backup.\n'
             'E.g. for the newest one:\n'
         )
         output += click.style(
@@ -284,7 +286,7 @@ def restore_command(ctx, file):
         "Restore a specific table": {
             "table": "database.table",
         },
-        "Force Restore a specific table": {
+        "Force restore a specific table": {
             "table": "database.table",
             "overwrite": True,
         },

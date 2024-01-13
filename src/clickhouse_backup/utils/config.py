@@ -24,7 +24,9 @@ def parse_config(config_folder: Path) -> Dynaconf:
             with open(default_config, 'w', encoding='utf-8') as f:
                 f.write(files('clickhouse_backup.data').joinpath('default.toml').read_text())
         except Exception as e:
-            logging.exception(f'Failed to create default config {default_config}', e)
+            logging.critical(f'Failed to create default config {default_config}. '
+                             'Consider creating the folder writeable for this user '
+                             f'or choose a different path. Error: {e}')
             sys.exit(1)
 
     settings = Dynaconf(
