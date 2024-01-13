@@ -23,7 +23,7 @@ class Backup(ABC):
         :param backup_dir: directory where clickhouse stores backups
         """
         self.timestamp = timestamp if timestamp else datetime.now()
-        self.backup_dir = backup_dir
+        self.backup_dir = Path(backup_dir) if backup_dir else None
 
     def __str__(self):
         return f'Backup {self.timestamp}'
@@ -51,7 +51,7 @@ class Backup(ABC):
         if not self.backup_dir:
             raise NotImplementedError('Deletion without a backup dir is not supported yet!')
         os.remove(self.backup_dir / self.path)
-        logger.info(f'Removed backup: {str}')
+        logger.info(f'Removed backup: {self}')
 
 
 class IncrementalBackup(Backup):
