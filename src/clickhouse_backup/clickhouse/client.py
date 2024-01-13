@@ -86,7 +86,7 @@ class Client:
         :return: driver socket
         """
         if not self._client_socket:
-            logger.info('Connecting to ClickHouse...')
+            logger.debug('Connecting to ClickHouse...')
             self._client_socket = ClickHouseClient(
                 host=self._host,
                 port=self._port,
@@ -121,7 +121,8 @@ class Client:
                         temporary_table: Optional[str] = None,
                         view: Optional[str] = None,
                         ignored_databases: Optional[list[str]] = None,
-                        base_backup: Optional[FullBackup] = None) -> str:
+                        base_backup: Optional[FullBackup] = None,
+                        overwrite: bool = False) -> str:
         """
         Wrapper for the backup/restore command of ClickHouse.
         Only one object can be restored/backed up.
@@ -135,10 +136,10 @@ class Client:
         :param ignored_databases: databases to ignore in the process.
             information_schema, system by default
         :param base_backup: full backup for base
+        :param overwrite: whether to overwrite the existing tables/data
         :return: SQL command
         """
-        ignored_databases = ignored_databases or ['system', 'INFORMATION_SCHEMA',
-                                                  'information_schema']
+        ignored_databases = ignored_databases or ['system', 'information_schema']
         query = 'BACKUP ' if is_backup else 'RESTORE '
         if table:
             query += f'TABLE {table} '
@@ -156,8 +157,14 @@ class Client:
                     'ignored_databases must contain at least one database e.g. system.')
             query += f"ALL EXCEPT DATABASES {', '.join(ignored_databases)} "
         query += f'{"TO" if is_backup else "FROM"} {self._get_backup_path(backup.path)} '
+        settings = []
         if base_backup:
-            query += f'SETTINGS base_backup = {self._get_backup_path(base_backup.path)} '
+            settings.append(f'base_backup={self._get_backup_path(base_backup.path)}')
+        if overwrite:
+            settings.append('allow_non_empty_tables=true')
+        if len(settings) > 0:
+            query += 'SETTINGS ' + ', '.join(settings)
+
         # todo... will someone inject a query here? :) maybe should use the driver correctly hmmm
         return query
 
@@ -209,7 +216,8 @@ class Client:
                 temporary_table: Optional[str] = None,
                 view: Optional[str] = None,
                 ignored_databases: Optional[list[str]] = None,
-                base_backup: Optional[str] = None):
+                base_backup: Optional[str] = None,
+                overwrite: bool = False):
         """
         Restore a table, dictionary, database, temporary table, view or all databases.
         Only one object can be restored.
@@ -222,6 +230,7 @@ class Client:
         :param ignored_databases: databases to ignore in restoration.
             information_schema, system by default
         :param base_backup: full backup for base
+        :param overwrite: whether to overwrite the existing tables/data
         :return:
         """
         return self._backup_command(
@@ -233,7 +242,8 @@ class Client:
             temporary_table=temporary_table,
             view=view,
             ignored_databases=ignored_databases,
-            base_backup=base_backup
+            base_backup=base_backup,
+            overwrite=overwrite
         )
 
     def get_backup_status(self):
