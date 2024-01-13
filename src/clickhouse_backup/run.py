@@ -258,16 +258,16 @@ def restore_command(ctx, file):
     args: CtxArgs = ctx.obj
     backup_to_restore = None
     for full_backup in args.existing_backups.values():
-        if full_backup.path == file:
+        if str(full_backup.path) == file:
             backup_to_restore = full_backup
             break
         for incremental_backup in full_backup.incremental_backups:
-            if incremental_backup.path == file:
+            if str(incremental_backup.path) == file:
                 backup_to_restore = incremental_backup
                 break
     if not backup_to_restore:
-        click.secho(f'No match for {file}! Check the name!', file=sys.stderr,
-                    fg='red')
+        click.secho(f'No match for {file}! Check the name!\n', file=sys.stderr,
+                    fg='red', bold=True)
         ctx.invoke(list_command)
         sys.exit(1)
 

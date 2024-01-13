@@ -71,8 +71,8 @@ class IncrementalBackup(Backup):
         return f'Incremental Backup {self.path}'
 
     @property
-    def path(self) -> str:
-        return (
+    def path(self) -> Path:
+        return Path(
             f'ch-backup-{format_timestamp(self.base_backup.timestamp)}-inc-'
             f'{format_timestamp(self.timestamp)}.zip')
 
