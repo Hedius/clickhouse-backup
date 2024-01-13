@@ -35,6 +35,14 @@ class Backup(ABC):
         file name of the backup file
         """
 
+    @property
+    def timestamp_str(self) -> str:
+        """
+        timestamp as string without seconds
+        :return: timestamp as string
+        """
+        return self.timestamp.strftime('%Y-%m-%d %H:%M')
+
     def remove(self):
         """
         Remove the backup.

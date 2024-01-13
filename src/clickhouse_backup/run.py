@@ -202,11 +202,16 @@ def list_command(ctx):
         sys.exit(1)
     else:
         output = 'Listing backups:\n'
-        for full_backup in args.existing_backups.values():
+        for full_backup in sorted(args.existing_backups.values(), key=lambda x: x.timestamp):
             output += f'\n{full_backup} @ {full_backup.timestamp}'
-            for incremental_backup in full_backup.incremental_backups:
+            if len(full_backup.incremental_backups) == 0:
+                output += '\n\tNo incremental backups.'
+            else:
+                output += '\n\tIncremental backups:'
+            for incremental_backup in sorted(full_backup.incremental_backups,
+                                             key=lambda x: x.timestamp_str):
                 output += (
-                    f'\n\t{incremental_backup} @ {incremental_backup.timestamp}'
+                    f'\n\t\t{incremental_backup.path} @ {incremental_backup.timestamp_str}'
                 )
             output += '\n\n'
         print(output)
