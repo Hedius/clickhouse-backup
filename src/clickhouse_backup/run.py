@@ -23,8 +23,10 @@ class CtxArgs:
     Cache object for arguments between click group and commands.
     """
 
-    def __init__(self, settings: Dynaconf, ch: Client,
+    def __init__(self,
+                 config_folder: Path, settings: Dynaconf, ch: Client,
                  existing_backups: Dict[datetime, FullBackup]):
+        self.config_folder = Path(config_folder)
         self.settings = settings
         self.ch = ch
         self.existing_backups = existing_backups
@@ -59,6 +61,8 @@ def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
             full_backup.incremental_backups.append(
                 IncrementalBackup(base_backup=full_backup, timestamp=data['inc_timestamp'])
             )
+            # sort the backups
+            full_backup.incremental_backups.sort(key=lambda x: x.timestamp)
         else:
             backups[data['base_timestamp']] = FullBackup(timestamp=data['base_timestamp'],
                                                          backup_dir=backup_dir)
@@ -91,11 +95,13 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
     :param max_full_backups: max full backups to keep.
     :return:
     """
+    if max_full_backups == 0:
+        return
     for timestamp in sorted(existing_backups.keys()):
         if len(existing_backups) <= max_full_backups:
             break
         x = existing_backups.pop(timestamp)
-        logger.info(f'Deleting a full backup: {x} (Too many backups)')
+        logger.info(f'Deleting a full backup: {x} (Max {max_full_backups} full backups)')
         x.remove()
 
 
@@ -140,7 +146,7 @@ def main(ctx, config_folder):
         existing_backups = {}
     else:
         existing_backups = get_existing_backups(ch.backup_dir)
-    ctx.obj = CtxArgs(settings, ch, existing_backups)
+    ctx.obj = CtxArgs(config_folder, settings, ch, existing_backups)
 
 
 @main.command('backup')
@@ -175,8 +181,11 @@ def backup_command(
             ignored_databases=args.settings('backup.ignored_databases', cast=List[str],
                                             default=None)
         )
+        if isinstance(new_backup, FullBackup):
+            # append the new full backup to existing backups for the cleanup job
+            args.existing_backups[new_backup.timestamp] = new_backup
     except Exception as e:
-        logger.exception('Backup failed!', e)
+        logger.critical(f'Backup failed! (ClickHouse Error): {e}')
         sys.exit(1)
 
     if len(args.existing_backups) > 1:  # we will never delete if we only have 1 chain
@@ -198,32 +207,40 @@ def list_command(ctx):
     """
     args: CtxArgs = ctx.obj
     if len(args.existing_backups) == 0:
-        print('None! You have to create a backup first...')
+        print('None! You have to create a backup first...', file=sys.stderr)
         sys.exit(1)
     else:
         output = 'Listing backups:\n'
+        newest_backup = None
         for full_backup in sorted(args.existing_backups.values(), key=lambda x: x.timestamp):
+            newest_backup = full_backup
             output += f'\n{full_backup} @ {full_backup.timestamp}'
             if len(full_backup.incremental_backups) == 0:
                 output += '\n\tNo incremental backups.'
             else:
                 output += '\n\tIncremental backups:'
-            for incremental_backup in sorted(full_backup.incremental_backups,
-                                             key=lambda x: x.timestamp_str):
+            for incremental_backup in full_backup.incremental_backups:
+                newest_backup = incremental_backup
                 output += (
                     f'\n\t\t{incremental_backup.path} @ {incremental_backup.timestamp_str}'
                 )
             output += '\n\n'
+        output += (
+            'To get the restore DB command for a backup call the restore command with the '
+            'file name of a backup as the argument.\n'
+            'E.g. for the newest one:\n'
+            f'clickhouse-backup -c {args.config_folder} restore -f {newest_backup.path}'
+        )
         print(output)
 
 
 @main.command('restore')
-@click.pass_context
 @click.option(
     '-f', '--file',
     required=True,
     help='The file to restore. Name has to fully match!'
 )
+@click.pass_context
 def restore_command(ctx, file):
     """
     Generate the restore command for the given backup.
@@ -241,21 +258,46 @@ def restore_command(ctx, file):
                 backup_to_restore = incremental_backup
                 break
     if not backup_to_restore:
-        print(f'No match for {file}! Check the name!')
-        list_command(ctx)
+        print(f'No match for {file}! Check the name!', file=sys.stderr)
+        ctx.invoke(list_command)
         sys.exit(1)
 
-    # todo: implement restore
-    query = args.ch.restore(
-        backup=backup_to_restore,
-        base_backup=None if isinstance(backup_to_restore,
-                                       FullBackup) else backup_to_restore.base_backup,
-        ignored_databases=args.settings('backup.ignored_databases', cast=List[str],
-                                        default=None)
-    )
-    print(f'Execute the following query in clickhouse-client to restore the backup:\n\n{query}')
+    ignored_databases = args.settings('backup.ignored_databases', cast=List[str],
+                                      default=None)
+    examples = {
+        "Restore all databases except the ignored ones": {
+            "ignored_databases": ignored_databases,
+        },
+        "Force restore all databases and overwrite existing data": {
+            "ignored_databases": ignored_databases,
+            "overwrite": True,
+        },
+        "Restore a specific table": {
+            "table": "database.table",
+        },
+        "Force Restore a specific table": {
+            "table": "database.table",
+            "overwrite": True,
+        },
+        "Restore a specific table to a new table": {
+            "table": "database.table AS database.new_table",
+        }
+    }
+    print(f'Execute one of the following queries in clickhouse-client to restore the backup:\n')
+    for msg, config in examples.items():
+        # Will not run the query here. Just generate and print it.
+        full_args = {
+            "backup": backup_to_restore,
+            "base_backup": None if isinstance(backup_to_restore,
+                                              FullBackup) else backup_to_restore.base_backup,
+            **config
+        }
+        query = args.ch.restore(**full_args)
+        print(f'{msg}:\n{query}\n')
+
     print('Check the documentation of clickhouse for excluding tables/databases and '
-          'force overwriting existing data!')
+          'force overwriting existing data!\n'
+          'Help: https://clickhouse.com/docs/en/operations/backup')
 
 
 if __name__ == '__main__':
