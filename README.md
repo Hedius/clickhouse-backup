@@ -1,6 +1,6 @@
-# clickhouse-backup
-
 [![pipeline status](https://gitlab.com/Hedius/clickhouse-backup/badges/main/pipeline.svg)](https://gitlab.com/Hedius/clickhouse-backup/-/commits/main)
+
+# clickhouse-backup
 
 A backup tool for ClickHouse which uses the native
 [BACKUP](https://clickhouse.com/docs/en/manage/backups)
@@ -67,6 +67,7 @@ sudo -u clickhouse clickhouse-backup
 # or with a custom config folder
 sudo -u clickhouse clickhouse-backup -c YOUR_CONFIG_FOLDER
 ```
+
 Consider running at as the user clickhouse since the timer also runs with that user.
 
 Check the makefile for different options. (E.g. building a python package)
@@ -85,6 +86,7 @@ The format for setting settings is `CHBACKUP_<SECTION>__<SETTING>`.
 For more information see the [dyanconf docs](https://www.dynaconf.com/).
 
 ### Options
+
 ```toml
 [clickhouse]
 host = 'localhost'
