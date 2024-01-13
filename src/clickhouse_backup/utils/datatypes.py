@@ -73,7 +73,7 @@ class IncrementalBackup(Backup):
     @property
     def path(self) -> str:
         return (
-            f'ch-backup-{format_timestamp(self.base_backup.timestamp)}_inc_'
+            f'ch-backup-{format_timestamp(self.base_backup.timestamp)}-inc-'
             f'{format_timestamp(self.timestamp)}.zip')
 
 
@@ -96,7 +96,7 @@ class FullBackup(Backup):
 
     @property
     def path(self) -> Path:
-        return Path(f"ch-backup-{format_timestamp(self.timestamp)}_full.zip")
+        return Path(f"ch-backup-{format_timestamp(self.timestamp)}-full.zip")
 
     def new_incremental_backup(self) -> IncrementalBackup:
         """
@@ -116,5 +116,6 @@ class FullBackup(Backup):
             try:
                 backup.remove()
             except Exception as e:
-                logger.exception(f'Failed to remove {backup}', e)
+                logger.error(f'Failed to remove {backup}: {e}')
+                raise e
         super().remove()

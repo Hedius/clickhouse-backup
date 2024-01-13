@@ -44,14 +44,16 @@ def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
         try:
             data = parse_file_name(file)
         except ValueError:
-            logger.warning(f'Invalid file name in backup dir: {file}')
+            # ignore the lost and found folder / etc. only check archives.
+            if not file.endswith('.zip') and not '.tar' not in file:
+                logger.warning(f'Invalid file name in backup dir: {file}')
             continue
 
         if 'inc_timestamp' in data:
             if data['base_timestamp'] not in backups:
                 logger.error(
                     f'Full base backup {data["base_timestamp"]} for {file} is missing! '
-                    f'Deleting...!')
+                    + 'Deleting...!')
                 try:
                     os.remove(backup_dir / Path(file))
                 except PermissionError:
@@ -195,7 +197,7 @@ def backup_command(
                 args.settings('backup.max_full_backups', cast=int, default=2)
             )
         except Exception as e:
-            logger.exception('Error while deleting backup', e)
+            logger.error(f'Error while deleting backup: {e}')
             sys.exit(1)
 
 
@@ -207,31 +209,36 @@ def list_command(ctx):
     """
     args: CtxArgs = ctx.obj
     if len(args.existing_backups) == 0:
-        print('None! You have to create a backup first...', file=sys.stderr)
+        click.secho('None! You have to create a backup first...', fg='red',
+                    file=sys.stderr)
         sys.exit(1)
     else:
-        output = 'Listing backups:\n'
+        output = click.style('Listing backups:\n', fg='green', bold=True)
         newest_backup = None
         for full_backup in sorted(args.existing_backups.values(), key=lambda x: x.timestamp):
             newest_backup = full_backup
-            output += f'\n{full_backup} @ {full_backup.timestamp}'
+            output += click.style(f'{full_backup} @ {full_backup.timestamp}\n\t', fg='cyan')
             if len(full_backup.incremental_backups) == 0:
-                output += '\n\tNo incremental backups.'
+                output += click.style('No incremental backups.', fg='red')
             else:
-                output += '\n\tIncremental backups:'
+                output += click.style('Incremental backups:', fg='bright_green')
             for incremental_backup in full_backup.incremental_backups:
                 newest_backup = incremental_backup
-                output += (
-                    f'\n\t\t{incremental_backup.path} @ {incremental_backup.timestamp_str}'
+                output += click.style(
+                    f'\n\t\t{incremental_backup.path} @ {incremental_backup.timestamp_str}',
+                    fg='yellow'
                 )
             output += '\n\n'
         output += (
             'To get the restore DB command for a backup call the restore command with the '
             'file name of a backup as the argument.\n'
             'E.g. for the newest one:\n'
-            f'clickhouse-backup -c {args.config_folder} restore -f {newest_backup.path}'
         )
-        print(output)
+        output += click.style(
+            f'clickhouse-backup -c {args.config_folder} restore -f {newest_backup.path}',
+            fg='green'
+        )
+        click.echo(output)
 
 
 @main.command('restore')
@@ -258,7 +265,8 @@ def restore_command(ctx, file):
                 backup_to_restore = incremental_backup
                 break
     if not backup_to_restore:
-        print(f'No match for {file}! Check the name!', file=sys.stderr)
+        click.secho(f'No match for {file}! Check the name!', file=sys.stderr,
+                    fg='red')
         ctx.invoke(list_command)
         sys.exit(1)
 
@@ -283,7 +291,10 @@ def restore_command(ctx, file):
             "table": "database.table AS database.new_table",
         }
     }
-    print(f'Execute one of the following queries in clickhouse-client to restore the backup:\n')
+    click.secho(
+        f'Execute one of the following queries in clickhouse-client to restore the backup.\n',
+        fg='green'
+    )
     for msg, config in examples.items():
         # Will not run the query here. Just generate and print it.
         full_args = {
@@ -293,11 +304,12 @@ def restore_command(ctx, file):
             **config
         }
         query = args.ch.restore(**full_args)
-        print(f'{msg}:\n{query}\n')
+        click.secho(f'{msg}:', fg='yellow')
+        click.secho(f'{query}\n', fg='green')
 
-    print('Check the documentation of clickhouse for excluding tables/databases and '
-          'force overwriting existing data!\n'
-          'Help: https://clickhouse.com/docs/en/operations/backup')
+    click.secho('Check the documentation of clickhouse for more information:\n'
+                'Docs: https://clickhouse.com/docs/en/operations/backup',
+                fg='yellow')
 
 
 if __name__ == '__main__':
