@@ -115,6 +115,7 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
     required=True
 )
 @click.pass_context
+@click.version_option()
 def main(ctx, config_folder):
     """
     Create and restore ClickHouse backups.
