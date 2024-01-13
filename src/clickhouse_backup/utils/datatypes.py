@@ -23,7 +23,7 @@ class Backup(ABC):
         :param backup_dir: directory where clickhouse stores backups
         """
         self.timestamp = timestamp if timestamp else datetime.now()
-        self.backup_dir = backup_dir
+        self.backup_dir = Path(backup_dir) if backup_dir else None
 
     def __str__(self):
         return f'Backup {self.timestamp}'
@@ -35,6 +35,14 @@ class Backup(ABC):
         file name of the backup file
         """
 
+    @property
+    def timestamp_str(self) -> str:
+        """
+        timestamp as string without seconds
+        :return: timestamp as string
+        """
+        return self.timestamp.strftime('%Y-%m-%d %H:%M')
+
     def remove(self):
         """
         Remove the backup.
@@ -43,7 +51,7 @@ class Backup(ABC):
         if not self.backup_dir:
             raise NotImplementedError('Deletion without a backup dir is not supported yet!')
         os.remove(self.backup_dir / self.path)
-        logger.info(f'Removed backup: {str}')
+        logger.info(f'Removed backup: {self}')
 
 
 class IncrementalBackup(Backup):
@@ -63,9 +71,9 @@ class IncrementalBackup(Backup):
         return f'Incremental Backup {self.path}'
 
     @property
-    def path(self) -> str:
-        return (
-            f'ch-backup-{format_timestamp(self.base_backup.timestamp)}_inc_'
+    def path(self) -> Path:
+        return Path(
+            f'ch-backup-{format_timestamp(self.base_backup.timestamp)}-inc-'
             f'{format_timestamp(self.timestamp)}.zip')
 
 
@@ -73,6 +81,7 @@ class FullBackup(Backup):
     """
     Represents full backups.
     """
+
     def __init__(self, timestamp: Optional[datetime] = None,
                  backup_dir: Optional[Path] = None):
         """
@@ -87,7 +96,7 @@ class FullBackup(Backup):
 
     @property
     def path(self) -> Path:
-        return Path(f"ch-backup-{format_timestamp(self.timestamp)}_full.zip")
+        return Path(f"ch-backup-{format_timestamp(self.timestamp)}-full.zip")
 
     def new_incremental_backup(self) -> IncrementalBackup:
         """
@@ -107,5 +116,6 @@ class FullBackup(Backup):
             try:
                 backup.remove()
             except Exception as e:
-                logger.exception(f'Failed to remove {backup}', e)
+                logger.error(f'Failed to remove {backup}: {e}')
+                raise e
         super().remove()

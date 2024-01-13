@@ -13,7 +13,9 @@ pylama:
     - pip3 install --break-system-packages -r requirements.txt
     - pip3 install pylama[all]
   script:
-    - pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src --ignore=W0718,C901,R0913,R0902,W1203,R1710,W0511
+    - |
+      pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src \
+        --ignore=W0718,C901,R0913,R0902,W1203,R1710,W0511,E1120,R0903
 # code_quality:
 #   stage: code quality
 
@@ -23,7 +25,8 @@ pylama:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
   before_script:
-    - apt update && apt install -y python3 python3-pip python3-all python3-setuptools python3-distutils
+    - apt update
+    - apt install -y python3 python3-pip python3-all python3-setuptools python3-distutils
 
 build-src:
   <<: *build

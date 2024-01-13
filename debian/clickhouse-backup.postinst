@@ -40,7 +40,14 @@ sync_config_and_restart() {
     fi
 }
 
+# Service runs as clickhouse, users might run the command as root for restoring / listing backups
+# Set an ACL on /var/log/clickhouse-backup so that the user clickhouse can write to it.
+set_acls() {
+    setfacl -d -m u::rwx,g::rwx,o::---,u:$USER:rwx,g:$USER:rwx $LOG_DIR
+}
+
 create_directories
+set_acls
 sync_config_and_restart
 
 # Let debhelper deploy services etc.

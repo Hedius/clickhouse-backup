@@ -4,36 +4,19 @@ config handling for dynaconf
 import logging
 import os
 import sys
-from argparse import ArgumentParser, Namespace
 from importlib.resources import files
 from pathlib import Path
-from typing import Tuple
 
 from dynaconf import Dynaconf, Validator
 
 from clickhouse_backup.clickhouse.client import BackupTarget
 
 
-def parse_config() -> Tuple[Dynaconf, Namespace]:
+def parse_config(config_folder: Path) -> Dynaconf:
     """
     Parse config with dynaconf and argparse
     :return: 2-Tuple[Dynaconf, Namespace]
     """
-    ap = ArgumentParser(description='Create backups of your clickhouse database. '
-                                    'Docs: https://github.com/Hedius/clickhouse-backup')
-    ap.add_argument('-c', '--config-folder',
-                    help='Folder where the config files are stored. '
-                         'E.g.: /etc/clickhouse-backup',
-                    required=True,
-                    dest='config_folder')
-    ap.add_argument('-f', '--force-full',
-                    help='Force a full backup. And ignore any rules for incremental backups.',
-                    dest='force_full',
-                    action='store_true')
-
-    args = ap.parse_args()
-
-    config_folder = Path(args.config_folder)
     default_config = config_folder / 'default.toml'
     if not os.path.isfile(default_config):
         try:
@@ -41,14 +24,16 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
             with open(default_config, 'w', encoding='utf-8') as f:
                 f.write(files('clickhouse_backup.data').joinpath('default.toml').read_text())
         except Exception as e:
-            logging.exception(f'Failed to create default config {args.config_folder}!', e)
+            logging.critical(f'Failed to create default config {default_config}. '
+                             'Consider creating the folder writeable for this user '
+                             f'or choose a different path. Error: {e}')
             sys.exit(1)
 
     settings = Dynaconf(
         envvar_prefix='CH_BACKUP',
         # environments=True,
         settings_files=['default.toml', 'config.toml'],
-        root_path=str(args.config_folder),
+        root_path=str(config_folder),
         merge_enabled=True,
         validators=[
             # Validator('clickhouse.host', must_exist=True),
@@ -83,4 +68,4 @@ def parse_config() -> Tuple[Dynaconf, Namespace]:
     #         target_validators = []
     # settings.validators.extend(target_validators)
     # settings.validators.validate_all()
-    return settings, args.force_full
+    return settings

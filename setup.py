@@ -1,15 +1,24 @@
 __AUTHOR__ = 'Hedius'
-__VERSION__ = '0.0.1'
+__VERSION__ = '0.1.0'
 __EMAIL__ = 'clickhouse-backup@hedius.eu'
 __LICENSE__ = 'GPLv3'
 
 import os
+import re
 from pathlib import Path
 
 from setuptools import find_namespace_packages, setup
 
 with open(Path(__file__).parent / 'README.md') as f:
-    readme = f.read()
+    lines = f.readlines()
+    filtered = [
+        x for x in lines
+        if not re.match(r'^[\[!]{2}', x) and len(x) > 0
+    ]
+    readme = ''.join(filtered)
+
+with open(Path(__file__).parent / 'requirements.txt') as f:
+    requirements = f.read()
 
 package_data = {
     'clickhouse_backup.data': ['*.toml', '*.service'],
@@ -35,9 +44,8 @@ setup(
     author_email=__EMAIL__,
     maintainer=__AUTHOR__,
     maintainer_email=__EMAIL__,
-    description='A python wrapper around ClickHouse to use the BACKUP '
-                'command for creating backups of your database.',
-    long_description=readme,
+    description='Backup tool for the column-based database ClickHouse.',
+    long_description=readme.split('## Installation')[0].split('# clickhouse-backup')[-1].strip(),
     long_description_content_type='text/markdown',
     # Not needed / using auto discovery
     package_dir={'': 'src'},
@@ -46,11 +54,7 @@ setup(
     entry_points={
         'console_scripts': ['clickhouse-backup=clickhouse_backup.run:main'],
     },
-    install_requires=[
-        'clickhouse-driver>=0.2.5',
-        'dynaconf>=3.1.7',
-        'loguru>=0.6.0'
-    ],
+    install_requires=requirements,
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: System Administrators',
