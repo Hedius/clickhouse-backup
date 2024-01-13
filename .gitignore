@@ -5,3 +5,7 @@ config/config.toml
 /config/default.toml
 
 *.egg-info
+
+.idea
+
+__pycache__
