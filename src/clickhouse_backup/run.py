@@ -295,7 +295,7 @@ def restore_command(ctx, file):
         }
     }
     click.secho(
-        f'Execute one of the following queries in clickhouse-client to restore the backup.\n',
+        'Execute one of the following queries in clickhouse-client to restore the backup.\n',
         fg='green'
     )
     for msg, config in examples.items():
