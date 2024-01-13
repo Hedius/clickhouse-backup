@@ -14,8 +14,8 @@ deb:
 		--suite  $(CODENAME) \
 		--no-python2-scripts=True \
 		-c 10 \
-		--with-dh-systemd \
-		--debian-version $CI_JOB_ID+$(RELEASE)$(CODENAME) bdist_deb
+		--with-dh-systemd bdist_deb
+		# --debian-version $(RELEASE)-$(CODENAME) bdist_deb
 clean:
 	python3 setup.py clean --all
 	rm -rf dist/ dist_deb/ deb_dist/ build/ *.egg-info/

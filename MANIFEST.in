@@ -1,1 +1,2 @@
-debian/*
+include debian/*
+include requirements.txt
