@@ -17,4 +17,5 @@ disk = 'CHBackup'
 # a full backup will be created every time a chain has reached x incremental backups.
 max_incremental_backups = 6
 # keep 2 full backups by default + their incrementals
+# set to 0 to keep all backups
 max_full_backups = 2
