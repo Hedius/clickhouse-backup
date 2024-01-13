@@ -201,13 +201,12 @@ def list_command(ctx):
         print('None! You have to create a backup first...')
         sys.exit(1)
     else:
-        output = 'Listing backups:\n\n'
+        output = 'Listing backups:\n'
         for full_backup in args.existing_backups.values():
-            output += f'{full_backup} @ {full_backup.timestamp.isoformat()}'
+            output += f'\n{full_backup} @ {full_backup.timestamp}'
             for incremental_backup in full_backup.incremental_backups:
                 output += (
-                    f'{incremental_backup} @ {incremental_backup.timestamp} '
-                    f'Base: {full_backup.path}'
+                    f'\n\t{incremental_backup} @ {incremental_backup.timestamp}'
                 )
             output += '\n\n'
         print(output)
