@@ -70,7 +70,7 @@ class Client:
         self._port = port
         self._user = user
         self._password = password
-        self._client = self._connect()
+        self._client_socket: Optional[ClickHouseClient] = None
 
         self.backup_target = backup_target
         self.backup_dir = backup_dir
@@ -79,18 +79,21 @@ class Client:
         self._s3_access_key_id = s3_access_key_id
         self._s3_secret_access_key = s3_secret_access_key
 
-    def _connect(self) -> ClickHouseClient:
+    @property
+    def client(self) -> ClickHouseClient:
         """
         Open a new connection to ClickHouse.
         :return: driver socket
         """
-        logger.info('Connecting to ClickHouse...')
-        return ClickHouseClient(
-            host=self._host,
-            port=self._port,
-            user=self._user,
-            password=self._password
-        )
+        if not self._client_socket:
+            logger.info('Connecting to ClickHouse...')
+            self._client_socket = ClickHouseClient(
+                host=self._host,
+                port=self._port,
+                user=self._user,
+                password=self._password
+            )
+        return self._client_socket
 
     def _get_backup_path(self, file_path: str or Path) -> str:
         """
@@ -190,7 +193,7 @@ class Client:
             base_backup=base_backup
         )
         logger.info(f'Creating a new backup: {backup}')
-        result = self._client.execute(query)
+        result = self.client.execute(query)
         logger.info(f'Created backup: {backup}')
         (backup_id, status) = result[0]
         logger.info(f'Backup {backup_id} status: {status}')
@@ -238,4 +241,4 @@ class Client:
         Get the backup status for all backups.
         :return:
         """
-        return self._client.execute('SELECT * FROM `system`.backups')
+        return self.client.execute('SELECT * FROM `system`.backups')
