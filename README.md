@@ -57,7 +57,7 @@ max_full_backups = 2
 You can add a `config.toml` to the same folder to overwrite the default settings.
 
 A systemd timer `clickhouse-backup.timer` is provided to create backups automatically.
-The timer runs every night at 02:00 am.
+The timer runs every night at 01:00 am.
 
 You can use the program with the command:
 
@@ -68,7 +68,8 @@ sudo -u clickhouse clickhouse-backup
 sudo -u clickhouse clickhouse-backup -c YOUR_CONFIG_FOLDER
 ```
 
-Consider running at as the user clickhouse since the timer also runs with that user.
+Running the command as root is possible and an ACL ensures that the timer which
+runs as clickhouse can always write files to the required folders.
 
 Check the makefile for different options. (E.g. building a python package)
 
