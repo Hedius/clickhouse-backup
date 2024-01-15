@@ -206,7 +206,9 @@ class Client:
         (backup_id, status) = result[0]
         logger.info(f'Backup {backup_id} status: {status}')
         if status != 'CREATING_BACKUP':
-            raise RuntimeError(f'Backup {backup_id} failed! Check the clickhouse logs or system.backups')
+            raise RuntimeError(
+                f'Backup {backup_id} failed! Check the clickhouse logs or system.backups'
+            )
         check_interval = 30
         while True:
             r = self.get_backup_status(backup_id)
@@ -216,7 +218,8 @@ class Client:
                 logger.debug(f'Still creating the backup... Checking again in {check_interval}s')
                 time.sleep(check_interval)
                 continue
-            elif status == 'BACKUP_CREATED':
+
+            if status == 'BACKUP_CREATED':
                 logger.info(f'Backup {backup_id} has been created. Status: {status}')
             else:
                 logger.critical(f'Failed to create backup {backup_id} with error {error}')
@@ -267,8 +270,10 @@ class Client:
         :param backup_id: id of the backup
         :return: 3-tuple (name, status, error)
         """
-        result = self.client.execute('SELECT name, status, error FROM `system`.backups WHERE id = %(id)s',
-                                     {'id': backup_id})
+        result = self.client.execute(
+            'SELECT name, status, error FROM `system`.backups WHERE id = %(id)s',
+            {'id': backup_id}
+        )
         if len(result) == 0:
             raise RuntimeError("Backup not found!")
         return result[0]
