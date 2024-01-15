@@ -2,6 +2,7 @@
 ClickHouse client / db actions / interactions
 """
 import os
+import time
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -200,12 +201,29 @@ class Client:
             base_backup=base_backup
         )
         logger.info(f'Creating a new backup: {backup}')
-        result = self.client.execute(query)
+        result = self.client.execute(query + " ASYNC")
         logger.info(f'Created backup: {backup}')
         (backup_id, status) = result[0]
         logger.info(f'Backup {backup_id} status: {status}')
-        if status != 'BACKUP_CREATED':
-            raise RuntimeError(f'Backup {backup_id} failed!')
+        if status != 'CREATING_BACKUP':
+            raise RuntimeError(
+                f'Backup {backup_id} failed! Check the clickhouse logs or system.backups'
+            )
+        check_interval = 30
+        while True:
+            r = self.get_backup_status(backup_id)
+            status = r[1]
+            error = r[2]
+            if status == 'CREATING_BACKUP':
+                logger.debug(f'Still creating the backup... Checking again in {check_interval}s')
+                time.sleep(check_interval)
+                continue
+
+            if status == 'BACKUP_CREATED':
+                logger.info(f'Backup {backup_id} has been created. Status: {status}')
+            else:
+                logger.critical(f'Failed to create backup {backup_id} with error {error}')
+            break
         return result
 
     def restore(self,
@@ -246,9 +264,16 @@ class Client:
             overwrite=overwrite
         )
 
-    def get_backup_status(self):
+    def get_backup_status(self, backup_id):
         """
-        Get the backup status for all backups.
-        :return:
+        Get the backup status for the given backup.
+        :param backup_id: id of the backup
+        :return: 3-tuple (name, status, error)
         """
-        return self.client.execute('SELECT * FROM `system`.backups')
+        result = self.client.execute(
+            'SELECT name, status, error FROM `system`.backups WHERE id = %(id)s',
+            {'id': backup_id}
+        )
+        if len(result) == 0:
+            raise RuntimeError("Backup not found!")
+        return result[0]
