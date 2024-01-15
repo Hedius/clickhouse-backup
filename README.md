@@ -3,7 +3,7 @@
 # clickhouse-backup
 
 A backup tool for ClickHouse which uses the native
-[BACKUP](https://clickhouse.com/docs/en/manage/backups)
+[BACKUP](https://clickhouse.com/docs/en/operations/backup)
 command to create backups and to restore from them.
 
 Meant for single-node setups. Not tested with clusters.
