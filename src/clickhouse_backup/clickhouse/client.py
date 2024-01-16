@@ -140,7 +140,8 @@ class Client:
         :param overwrite: whether to overwrite the existing tables/data
         :return: SQL command
         """
-        ignored_databases = ignored_databases or ['system', 'information_schema']
+        ignored_databases = ignored_databases or ['system', 'information_schema',
+                                                  'INFORMATION_SCHEMA']
         query = 'BACKUP ' if is_backup else 'RESTORE '
         if table:
             query += f'TABLE {table} '
