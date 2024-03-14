@@ -14,7 +14,8 @@ from loguru import logger
 from clickhouse_backup.clickhouse.client import BackupTarget, Client
 from clickhouse_backup.utils.config import parse_config
 from clickhouse_backup.utils.converters import parse_file_name
-from clickhouse_backup.utils.datatypes import Backup, FullBackup, IncrementalBackup
+from clickhouse_backup.utils.datatypes import (Backup, FullBackup,
+                                               IncrementalBackup)
 from clickhouse_backup.utils.logging import setup_logging
 
 
