@@ -203,7 +203,6 @@ class Client:
         )
         logger.info(f'Creating a new backup: {backup}')
         result = self.client.execute(query + " ASYNC")
-        logger.info(f'Created backup: {backup}')
         (backup_id, status) = result[0]
         logger.info(f'Backup {backup_id} status: {status}')
         if status != 'CREATING_BACKUP':

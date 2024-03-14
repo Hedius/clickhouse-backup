@@ -50,7 +50,10 @@ disk = 'CHBackup'
 # a full backup will be created every time a chain has reached x incremental backups.
 max_incremental_backups = 6
 # keep 2 full backups by default + their incrementals
-# set to 0 to keep all backups
+# set to 0 to keep all backups.
+# backups are deleted before creation.
+# if set to 2 and a 3rd chain would be created -> deleted
+# if set to 1 and only 1 chain exists, the deletion is delayed to the next run
 max_full_backups = 2
 ```
 
@@ -124,6 +127,9 @@ ignored_databases = [
 max_incremental_backups = 6
 # keep 2 full backups by default + their incrementals
 # set to 0 to keep all backups
+# backups are deleted before creation.
+# if set to 2 and a 3rd chain would be created -> deleted
+# if set to 1 and only 1 chain exists, the deletion is delayed to the next run
 max_full_backups = 2
 
 [backup.s3]
