@@ -109,9 +109,7 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
         if n == max_full_backups:
             if isinstance(next_backup, IncrementalBackup):
                 break
-        elif n == 1:
-            break
-        else:
+        elif n < max_full_backups:
             break
         x = existing_backups.pop(timestamp)
         logger.info(f'Deleting a full backup: {x} (Max {max_full_backups} full backups)')
