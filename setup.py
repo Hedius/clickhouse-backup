@@ -1,5 +1,5 @@
 __AUTHOR__ = 'Hedius'
-__VERSION__ = '1.0.0'
+__VERSION__ = '1.0.1'
 __EMAIL__ = 'clickhouse-backup@hedius.eu'
 __LICENSE__ = 'GPLv3'
 
