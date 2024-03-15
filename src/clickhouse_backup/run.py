@@ -14,7 +14,8 @@ from loguru import logger
 from clickhouse_backup.clickhouse.client import BackupTarget, Client
 from clickhouse_backup.utils.config import parse_config
 from clickhouse_backup.utils.converters import parse_file_name
-from clickhouse_backup.utils.datatypes import FullBackup, IncrementalBackup
+from clickhouse_backup.utils.datatypes import (Backup, FullBackup,
+                                               IncrementalBackup)
 from clickhouse_backup.utils.logging import setup_logging
 
 
@@ -88,19 +89,27 @@ def get_base_backup(existing_backups: Dict[datetime, FullBackup],
 
 
 def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
-                      max_full_backups: int):
+                      max_full_backups: int,
+                      next_backup: Backup):
     """
     Remove old backup chains.
     If we have n > max_full_backups, the oldest full backup + its
     incremental backups are deleted.
+    If we have n >= max_full_backups and the next one is a full one, we
+    also wipe the chain.
     :param existing_backups: dict containing existing backups
     :param max_full_backups: max full backups to keep.
+    :param next_backup: next backup what will be created.
     :return:
     """
     if max_full_backups == 0:
         return
     for timestamp in sorted(existing_backups.keys()):
-        if len(existing_backups) <= max_full_backups:
+        n = len(existing_backups)
+        if n == max_full_backups:
+            if isinstance(next_backup, IncrementalBackup):
+                break
+        elif n < max_full_backups:
             break
         x = existing_backups.pop(timestamp)
         logger.info(f'Deleting a full backup: {x} (Max {max_full_backups} full backups)')
@@ -179,6 +188,16 @@ def backup_command(
     new_backup = (base_backup.new_incremental_backup()
                   if base_backup
                   else FullBackup(backup_dir=args.ch.backup_dir))
+    if len(args.existing_backups) > 1:  # we will never delete if we only have 1 chain
+        try:
+            clean_old_backups(
+                args.existing_backups,
+                args.settings('backup.max_full_backups', cast=int, default=2),
+                new_backup
+            )
+        except Exception as e:
+            logger.error(f'Error while deleting backup: {e}')
+            sys.exit(1)
     try:
         args.ch.backup(
             backup=new_backup,
@@ -192,16 +211,6 @@ def backup_command(
     except Exception as e:
         logger.critical(f'Backup failed! (ClickHouse Error): {e}')
         sys.exit(1)
-
-    if len(args.existing_backups) > 1:  # we will never delete if we only have 1 chain
-        try:
-            clean_old_backups(
-                args.existing_backups,
-                args.settings('backup.max_full_backups', cast=int, default=2)
-            )
-        except Exception as e:
-            logger.error(f'Error while deleting backup: {e}')
-            sys.exit(1)
 
 
 @main.command('list')
