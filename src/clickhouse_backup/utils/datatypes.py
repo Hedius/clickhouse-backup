@@ -90,7 +90,7 @@ class FullBackup(Backup):
 
     @property
     def path(self) -> Path:
-        return Path(f'ch-backup-{format_timestamp(self.timestamp)}-full.{self._file_type_suffix}')
+        return Path(f'ch-backup-{format_timestamp(self.timestamp)}-full{self._file_type_suffix}')
 
     def new_incremental_backup(self) -> IncrementalBackup:
         """

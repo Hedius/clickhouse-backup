@@ -29,12 +29,14 @@ class CtxArgs:
     def __init__(self,
                  config_folder: Path, settings: Dynaconf, ch: Client,
                  existing_backups: Dict[datetime, FullBackup],
-                 file_type: Optional[str]):
+                 file_type: Optional[str],
+                 backend: Backend):
         self.config_folder = Path(config_folder)
         self.settings = settings
         self.ch = ch
         self.existing_backups = existing_backups
         self.file_type = file_type
+        self.backend = backend
 
 
 def parse_existing_backups(backend: Backend, file_type: Optional[str] = None) -> Dict[
@@ -46,12 +48,12 @@ def parse_existing_backups(backend: Backend, file_type: Optional[str] = None) ->
     :return: dict of all existing backups
     """
     backups: Dict[datetime, FullBackup] = {}
-    for file in backend.get_existing_backups():
+    for file in sorted(backend.get_existing_backups(), key=lambda x: 'inc' in x):
         try:
             data = parse_file_name(file)
         except ValueError:
             # ignore the lost and found folder / etc. only check archives.
-            if file and not file.endswith(file_type):
+            if file_type and not file.endswith(file_type):
                 logger.warning(f'Invalid file name in backup dir: {file}')
             continue
 
@@ -121,7 +123,7 @@ def clean_old_backups(backend: Backend, existing_backups: Dict[datetime, FullBac
         x = existing_backups.pop(timestamp)
         logger.info(f'Deleting a full backup: {x} (Max {max_full_backups} full backups)')
         for inc in x.incremental_backups:
-            backend.remove(x)
+            backend.remove(inc)
         backend.remove(x)
 
 
@@ -165,13 +167,13 @@ def main(ctx, config_folder):
 
     if ch.backup_target in (BackupTarget.S3, BackupTarget.S3_DISK):
         file_type = None
-        backend = S3Backend(ch.s3_endpoint, ch.s3_access_id, ch.s3_secret_access_key,
-                            ch.s3_bucket)
+        backend = S3Backend(ch.s3_endpoint, ch.s3_bucket, ch.s3_access_id,
+                            ch.s3_secret_access_key)
     else:
         file_type = 'tar.gz'
         backend = DiskBackend(ch.backup_dir)
     existing_backups = parse_existing_backups(backend, file_type)
-    ctx.obj = CtxArgs(config_folder, settings, ch, existing_backups, file_type)
+    ctx.obj = CtxArgs(config_folder, settings, ch, existing_backups, file_type, backend)
 
 
 @main.command('backup')
@@ -202,6 +204,7 @@ def backup_command(
     if len(args.existing_backups) > 1:  # we will never delete if we only have 1 chain
         try:
             clean_old_backups(
+                args.backend,
                 args.existing_backups,
                 args.settings('backup.max_full_backups', cast=int, default=2),
                 new_backup
@@ -265,13 +268,12 @@ def list_command(ctx):
 
 
 @main.command('restore')
-@click.option(
-    '-f', '--file',
+@click.argument(
+    'backup',
     required=True,
-    help='The file to restore. Name has to fully match!'
 )
 @click.pass_context
-def restore_command(ctx, file):
+def restore_command(ctx, backup):
     """
     Generate the restore command for the given backup.
     Use the command in clickhouse-client to restore the backup.
@@ -280,15 +282,15 @@ def restore_command(ctx, file):
     args: CtxArgs = ctx.obj
     backup_to_restore = None
     for full_backup in args.existing_backups.values():
-        if str(full_backup.path) == file:
+        if str(full_backup.path) == backup:
             backup_to_restore = full_backup
             break
         for incremental_backup in full_backup.incremental_backups:
-            if str(incremental_backup.path) == file:
+            if str(incremental_backup.path) == backup:
                 backup_to_restore = incremental_backup
                 break
     if not backup_to_restore:
-        click.secho(f'No match for {file}! Check the name!\n', file=sys.stderr,
+        click.secho(f'No match for {backup}! Check the name!\n', file=sys.stderr,
                     fg='red', bold=True)
         ctx.invoke(list_command)
         sys.exit(1)

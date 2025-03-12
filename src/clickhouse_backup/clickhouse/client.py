@@ -59,7 +59,7 @@ class Client(ABC):
                     raise ValueError('backup_dir must be provided when using File backup target')
                 if not os.path.isdir(backup_dir):
                     raise FileNotFoundError(f'backup_dir {backup_dir} does not exist!')
-            case BackupTarget.DISK:
+            case BackupTarget.DISK | BackupTarget.S3_DISK:
                 if not disk:
                     raise ValueError('disk must be provided when using Disk backup target')
             case BackupTarget.S3 | BackupTarget.S3_DISK:

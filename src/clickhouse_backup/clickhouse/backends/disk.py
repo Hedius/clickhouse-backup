@@ -22,8 +22,7 @@ class DiskBackend(Backend):
         Get all existing backups.
         :return: list with existing backup files.
         """
-        files = [x for x in os.listdir(self.backup_dir) if x.endswith(".zip") or '.tar' in x]
-        return sorted(files, key=lambda x: 'inc' in x)
+        return [x for x in os.listdir(self.backup_dir) if x.endswith(".zip") or '.tar' in x]
 
     def remove(self, backup: FullBackup or IncrementalBackup or Path or str) -> None:
         if isinstance(backup, Path) or isinstance(backup, str):
