@@ -155,6 +155,7 @@ def main(ctx, config_folder):
             backup_dir=settings('backup.dir', default=None),
             disk=settings('backup.disk', default=None),
             s3_endpoint=settings('backup.s3.endpoint', default=None),
+            s3_bucket=settings('backup.s3.bucket', default=None),
             s3_access_key_id=settings('backup.s3.access_key_id', default=None),
             s3_secret_access_key=settings('backup.s3.secret_access_key', default=None),
         )
@@ -164,7 +165,8 @@ def main(ctx, config_folder):
 
     if ch.backup_target in (BackupTarget.S3, BackupTarget.S3_DISK):
         file_type = None
-        backend = S3Backend(ch.s3_endpoint, ch.s3_access_id, ch.s3_secret_access_key)
+        backend = S3Backend(ch.s3_endpoint, ch.s3_access_id, ch.s3_secret_access_key,
+                            ch.s3_bucket)
     else:
         file_type = 'tar.gz'
         backend = DiskBackend(ch.backup_dir)

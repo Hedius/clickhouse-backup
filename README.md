@@ -135,6 +135,7 @@ max_full_backups = 2
 [backup.s3]
 # s3 config for the S3 target.
 endpoint = ''
+bucket = ''
 access_key_id = ''
 secret_access_key = ''
 ```

@@ -36,6 +36,7 @@ class Client(ABC):
                  backup_dir: Optional[Path] = None,
                  disk: Optional[str] = None,
                  s3_endpoint: Optional[str] = None,
+                 s3_bucket: Optional[str] = None,
                  s3_access_key_id: Optional[str] = None,
                  s3_secret_access_key: Optional[str] = None):
         """
@@ -48,6 +49,7 @@ class Client(ABC):
         :param backup_dir: default: None
         :param disk: default: None
         :param s3_endpoint: default: None
+        :param s3_bucket: default: None
         :param s3_access_key_id: default: None
         :param s3_secret_access_key: default: None
         """
@@ -63,6 +65,8 @@ class Client(ABC):
             case BackupTarget.S3 | BackupTarget.S3_DISK:
                 if not s3_endpoint:
                     raise ValueError('s3_endpoint must be provided when using S3 backup target')
+                if not s3_bucket:
+                    raise ValueError('s3_bucket must be provided when using S3 backup target')
                 if not s3_access_key_id:
                     raise ValueError(
                         's3_access_key_id must be provided when using S3 backup target')
@@ -80,6 +84,7 @@ class Client(ABC):
         self.backup_dir = backup_dir
         self._disk = disk
         self.s3_endpoint = s3_endpoint
+        self.s3_bucket = s3_bucket
         self.s3_access_id = s3_access_key_id
         self.s3_secret_access_key = s3_secret_access_key
 
@@ -111,7 +116,7 @@ class Client(ABC):
             case BackupTarget.DISK | BackupTarget.S3_DISK:
                 return f"Disk('{self._disk}', '{file_path}')"
             case BackupTarget.S3:
-                return (f"S3('{self.s3_endpoint}/{file_path}', "
+                return (f"S3('{self.s3_endpoint}/{self.s3_bucket}/{file_path}', "
                         f"'{self.s3_access_id}', '{self.s3_secret_access_key}')")
             case _:
                 raise ValueError(f'Invalid backup target: {self.backup_target}')
