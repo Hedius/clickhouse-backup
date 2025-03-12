@@ -1,7 +1,6 @@
 """
 Creates backups in ClickHouse by using the BACKUP command of the DB.
 """
-import os
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -11,6 +10,9 @@ import click
 from dynaconf import Dynaconf
 from loguru import logger
 
+from clickhouse_backup.clickhouse.backends.base import Backend
+from clickhouse_backup.clickhouse.backends.disk import DiskBackend
+from clickhouse_backup.clickhouse.backends.s3 import S3Backend
 from clickhouse_backup.clickhouse.client import BackupTarget, Client
 from clickhouse_backup.utils.config import parse_config
 from clickhouse_backup.utils.converters import parse_file_name
@@ -26,27 +28,30 @@ class CtxArgs:
 
     def __init__(self,
                  config_folder: Path, settings: Dynaconf, ch: Client,
-                 existing_backups: Dict[datetime, FullBackup]):
+                 existing_backups: Dict[datetime, FullBackup],
+                 file_type: Optional[str]):
         self.config_folder = Path(config_folder)
         self.settings = settings
         self.ch = ch
         self.existing_backups = existing_backups
+        self.file_type = file_type
 
 
-def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
+def parse_existing_backups(backend: Backend, file_type: Optional[str] = None) -> Dict[
+    datetime, FullBackup]:
     """
     Get all existing backups.
-    :param backup_dir: directory containing backups files.
+    :param backend: storage backend
+    :param file_type: file type
     :return: dict of all existing backups
     """
     backups: Dict[datetime, FullBackup] = {}
-    files = sorted(os.listdir(backup_dir), key=lambda x: 'inc' in x)
-    for file in files:
+    for file in backend.get_existing_backups():
         try:
             data = parse_file_name(file)
         except ValueError:
             # ignore the lost and found folder / etc. only check archives.
-            if not file.endswith('.zip') and not '.tar' not in file:
+            if file and not file.endswith(file_type):
                 logger.warning(f'Invalid file name in backup dir: {file}')
             continue
 
@@ -56,19 +61,20 @@ def get_existing_backups(backup_dir: Path) -> Dict[datetime, FullBackup]:
                     f'Full base backup {data["base_timestamp"]} for {file} is missing! '
                     + 'Deleting...!')
                 try:
-                    os.remove(backup_dir / Path(file))
+                    backend.remove(file)
                 except PermissionError:
                     logger.error(f'Could not delete {file}! Permission denied!')
                 continue
             full_backup = backups[data['base_timestamp']]
             full_backup.incremental_backups.append(
-                IncrementalBackup(base_backup=full_backup, timestamp=data['inc_timestamp'])
+                IncrementalBackup(base_backup=full_backup, timestamp=data['inc_timestamp'],
+                                  file_type=file_type)
             )
             # sort the backups
             full_backup.incremental_backups.sort(key=lambda x: x.timestamp)
         else:
             backups[data['base_timestamp']] = FullBackup(timestamp=data['base_timestamp'],
-                                                         backup_dir=backup_dir)
+                                                         file_type=file_type)
     return backups
 
 
@@ -82,13 +88,13 @@ def get_base_backup(existing_backups: Dict[datetime, FullBackup],
     :return: FullBackup or None
     """
     if len(existing_backups) == 0:
-        return
+        return None
     newest_full_backup = existing_backups[max(existing_backups.keys())]
     if len(newest_full_backup.incremental_backups) < max_incremental_backups:
         return newest_full_backup
 
 
-def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
+def clean_old_backups(backend: Backend, existing_backups: Dict[datetime, FullBackup],
                       max_full_backups: int,
                       next_backup: Backup):
     """
@@ -97,6 +103,7 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
     incremental backups are deleted.
     If we have n >= max_full_backups and the next one is a full one, we
     also wipe the chain.
+    :param backend: storage backend
     :param existing_backups: dict containing existing backups
     :param max_full_backups: max full backups to keep.
     :param next_backup: next backup what will be created.
@@ -113,7 +120,9 @@ def clean_old_backups(existing_backups: Dict[datetime, FullBackup],
             break
         x = existing_backups.pop(timestamp)
         logger.info(f'Deleting a full backup: {x} (Max {max_full_backups} full backups)')
-        x.remove()
+        for inc in x.incremental_backups:
+            backend.remove(x)
+        backend.remove(x)
 
 
 @click.group()
@@ -153,14 +162,14 @@ def main(ctx, config_folder):
         logger.exception('Error during config parsing!', e)
         sys.exit(1)
 
-    if ch.backup_target == BackupTarget.S3 or not ch.backup_dir:
-        logger.warning('Automatic incremental backups and retention are not '
-                       'supported when using S3 as backup target!'
-                       ' (Not implemented yet)')
-        existing_backups = {}
+    if ch.backup_target in (BackupTarget.S3, BackupTarget.S3_DISK):
+        file_type = None
+        backend = S3Backend(ch.s3_endpoint, ch.s3_access_id, ch.s3_secret_access_key)
     else:
-        existing_backups = get_existing_backups(ch.backup_dir)
-    ctx.obj = CtxArgs(config_folder, settings, ch, existing_backups)
+        file_type = 'tar.gz'
+        backend = DiskBackend(ch.backup_dir)
+    existing_backups = parse_existing_backups(backend, file_type)
+    ctx.obj = CtxArgs(config_folder, settings, ch, existing_backups, file_type)
 
 
 @main.command('backup')
@@ -187,7 +196,7 @@ def backup_command(
         )
     new_backup = (base_backup.new_incremental_backup()
                   if base_backup
-                  else FullBackup(backup_dir=args.ch.backup_dir))
+                  else FullBackup(file_type=args.file_type))
     if len(args.existing_backups) > 1:  # we will never delete if we only have 1 chain
         try:
             clean_old_backups(

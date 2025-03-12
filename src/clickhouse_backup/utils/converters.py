@@ -34,7 +34,7 @@ def parse_file_name(file_path: str or Path) -> dict:
     :param file_path:
     :return: Dictionary with keys: base_timestamp, backup_type, path, inc_timestamp
     """
-    match = re.match(r'ch-backup-([\d_]+)-([^-]+)-?([\d_]+)?.zip', str(file_path))
+    match = re.match(r'ch-backup-([\d_]+)-([^-]+)-?([\d_]+)', str(file_path))
     if not match:
         raise ValueError(f'Invalid file name: {file_path}')
     base_timestamp = parse_timestamp(match.group(1))

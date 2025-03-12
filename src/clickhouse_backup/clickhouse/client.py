@@ -3,9 +3,11 @@ ClickHouse client / db actions / interactions
 """
 import os
 import time
+from abc import ABC, abstractmethod
+from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Dict
 
 from clickhouse_driver import Client as ClickHouseClient
 from loguru import logger
@@ -20,9 +22,10 @@ class BackupTarget(Enum):
     FILE = 'File'
     DISK = 'Disk'
     S3 = 'S3'
+    S3_DISK = 'S3-Disk'
 
 
-class Client:
+class Client(ABC):
     """
     ClickHouse client. uses the native protocol.
     """
@@ -57,7 +60,7 @@ class Client:
             case BackupTarget.DISK:
                 if not disk:
                     raise ValueError('disk must be provided when using Disk backup target')
-            case BackupTarget.S3:
+            case BackupTarget.S3 | BackupTarget.S3_DISK:
                 if not s3_endpoint:
                     raise ValueError('s3_endpoint must be provided when using S3 backup target')
                 if not s3_access_key_id:
@@ -76,9 +79,9 @@ class Client:
         self.backup_target = backup_target
         self.backup_dir = backup_dir
         self._disk = disk
-        self._s3_endpoint = s3_endpoint
-        self._s3_access_key_id = s3_access_key_id
-        self._s3_secret_access_key = s3_secret_access_key
+        self.s3_endpoint = s3_endpoint
+        self.s3_access_id = s3_access_key_id
+        self.s3_secret_access_key = s3_secret_access_key
 
     @property
     def client(self) -> ClickHouseClient:
@@ -105,11 +108,11 @@ class Client:
             case BackupTarget.FILE:
                 # assuming a backup disk is defined.
                 return f"File('{file_path}')"
-            case BackupTarget.DISK:
+            case BackupTarget.DISK | BackupTarget.S3_DISK:
                 return f"Disk('{self._disk}', '{file_path}')"
             case BackupTarget.S3:
-                return (f"S3('{self._s3_endpoint}/{file_path}', "
-                        f"'{self._s3_access_key_id}', '{self._s3_secret_access_key}')")
+                return (f"S3('{self.s3_endpoint}/{file_path}', "
+                        f"'{self.s3_access_id}', '{self.s3_secret_access_key}')")
             case _:
                 raise ValueError(f'Invalid backup target: {self.backup_target}')
 
