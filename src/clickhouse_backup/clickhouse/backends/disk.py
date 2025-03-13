@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, List
+from typing import List
 
 from clickhouse_backup.clickhouse.backends.base import Backend
 from clickhouse_backup.utils.datatypes import FullBackup, IncrementalBackup

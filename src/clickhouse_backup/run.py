@@ -40,7 +40,7 @@ class CtxArgs:
 
 
 def parse_existing_backups(backend: Backend, file_type: Optional[str] = None) -> Dict[
-    datetime, FullBackup]:
+                           datetime, FullBackup]:
     """
     Get all existing backups.
     :param backend: storage backend

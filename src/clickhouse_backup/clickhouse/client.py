@@ -3,11 +3,10 @@ ClickHouse client / db actions / interactions
 """
 import os
 import time
-from abc import ABC, abstractmethod
-from datetime import datetime
+from abc import ABC
 from enum import Enum
 from pathlib import Path
-from typing import Optional, Dict
+from typing import Optional
 
 from clickhouse_driver import Client as ClickHouseClient
 from loguru import logger

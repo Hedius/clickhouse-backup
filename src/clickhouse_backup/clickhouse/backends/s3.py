@@ -42,7 +42,8 @@ class S3Backend(Backend):
         :return: list with existing backup files.
         """
         # yep we gotta get all objects... to look at the prefixes ch backup creates :)
-        logger.info('Loading existing backups from s3 (listing all files) this might take a while...')
+        logger.info(
+            'Loading existing backups from s3 (listing all files) this might take a while...')
         objects = self.bucket.objects.all()
         backups = set()
         for entry in objects:

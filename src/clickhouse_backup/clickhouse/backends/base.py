@@ -1,6 +1,5 @@
 from abc import ABC, abstractmethod
-from datetime import datetime
-from typing import Dict, List
+from typing import List
 
 from clickhouse_backup.utils.datatypes import FullBackup, IncrementalBackup
 
