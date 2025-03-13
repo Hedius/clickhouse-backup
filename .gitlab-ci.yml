@@ -14,8 +14,7 @@ pylama:
     - pip3 install pylama[all]
   script:
     - |
-      pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src \
-        --ignore=W0718,C901,R0913,R0902,W1203,R1710,W0511,E1120,R0903
+      pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src
 # code_quality:
 #   stage: code quality
 

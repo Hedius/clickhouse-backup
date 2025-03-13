@@ -1,3 +1,6 @@
+"""
+Handles listing/deleting backups for File,Disk backend.
+"""
 import os
 from pathlib import Path
 from typing import List
@@ -25,7 +28,7 @@ class DiskBackend(Backend):
         return [x for x in os.listdir(self.backup_dir) if x.endswith(".zip") or '.tar' in x]
 
     def remove(self, backup: FullBackup or IncrementalBackup or Path or str) -> None:
-        if isinstance(backup, Path) or isinstance(backup, str):
+        if isinstance(backup, (Path, str)):
             path = Path(backup)
         else:
             path = backup.path

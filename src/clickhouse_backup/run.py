@@ -27,7 +27,10 @@ class CtxArgs:
     """
 
     def __init__(self,
-                 config_folder: Path, settings: Dynaconf, ch: Client,
+                 *,
+                 config_folder: Path,
+                 settings: Dynaconf,
+                 ch: Client,
                  existing_backups: Dict[datetime, FullBackup],
                  file_type: Optional[str],
                  backend: Backend):
@@ -39,8 +42,8 @@ class CtxArgs:
         self.backend = backend
 
 
-def parse_existing_backups(backend: Backend, file_type: Optional[str] = None) -> Dict[
-                           datetime, FullBackup]:
+def parse_existing_backups(backend: Backend, file_type: Optional[str] = None) \
+        -> Dict[datetime, FullBackup]:
     """
     Get all existing backups.
     :param backend: storage backend
@@ -173,7 +176,14 @@ def main(ctx, config_folder):
         file_type = 'tar.gz'
         backend = DiskBackend(ch.backup_dir)
     existing_backups = parse_existing_backups(backend, file_type)
-    ctx.obj = CtxArgs(config_folder, settings, ch, existing_backups, file_type, backend)
+    ctx.obj = CtxArgs(
+        config_folder=config_folder,
+        settings=settings,
+        ch=ch,
+        existing_backups=existing_backups,
+        file_type=file_type,
+        backend=backend
+    )
 
 
 @main.command('backup')

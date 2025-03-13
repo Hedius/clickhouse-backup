@@ -1,3 +1,6 @@
+"""
+ABC for handling listing/deleting backups.
+"""
 from abc import ABC, abstractmethod
 from typing import List
 
@@ -17,11 +20,9 @@ class Backend(ABC):
         Full backups also cause a deletion of all incremental backups.
         :param backup: The backup to remove.
         """
-        pass
 
     @abstractmethod
     def get_existing_backups(self) -> List[str]:
         """
         Returns a list of existing backups.
         """
-        pass

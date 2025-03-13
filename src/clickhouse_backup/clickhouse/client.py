@@ -29,7 +29,7 @@ class Client(ABC):
     ClickHouse client. uses the native protocol.
     """
 
-    def __init__(self, host: str = 'localhost', port: str = '9000',
+    def __init__(self, *, host: str = 'localhost', port: str = '9000',
                  user: str = 'default', password: str = '',
                  backup_target: BackupTarget = BackupTarget.FILE,
                  backup_dir: Optional[Path] = None,
@@ -120,7 +120,7 @@ class Client(ABC):
             case _:
                 raise ValueError(f'Invalid backup target: {self.backup_target}')
 
-    def _backup_command(self,
+    def _backup_command(self, *,
                         backup: Backup,
                         is_backup: bool = True,
                         table: Optional[str] = None,
@@ -177,7 +177,7 @@ class Client(ABC):
         # todo... will someone inject a query here? :) maybe should use the driver correctly hmmm
         return query
 
-    def backup(self,
+    def backup(self, *,
                backup: Backup,
                table: Optional[str] = None,
                dictionary: Optional[str] = None,
@@ -233,7 +233,7 @@ class Client(ABC):
             break
         return result
 
-    def restore(self,
+    def restore(self, *,
                 backup: Backup,
                 table: Optional[str] = None,
                 dictionary: Optional[str] = None,

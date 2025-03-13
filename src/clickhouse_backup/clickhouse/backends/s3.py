@@ -1,3 +1,6 @@
+"""
+Handles listing/deleting backups for S3 backend.
+"""
 from pathlib import Path
 from typing import List
 
@@ -52,7 +55,7 @@ class S3Backend(Backend):
         return list(backups)
 
     def remove(self, backup: FullBackup or IncrementalBackup) -> None:
-        if isinstance(backup, Path) or isinstance(backup, str):
+        if isinstance(backup, (Path, str)):
             prefix = backup
         else:
             prefix = backup.path

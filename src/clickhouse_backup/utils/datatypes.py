@@ -17,7 +17,8 @@ class Backup(ABC):
     def __init__(self, timestamp: Optional[datetime] = None, file_type: Optional[str] = None):
         """
         :param timestamp: timestamp of the backup
-        :param file_type: file type of the backup. Should be zip or tar.gz Do not set if you handle S3.
+        :param file_type: file type of the backup.
+            Should be zip or tar.gz Do not set if you handle S3.
         """
         self.timestamp = timestamp if timestamp else datetime.now()
         self.file_type = file_type
