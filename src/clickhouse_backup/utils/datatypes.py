@@ -95,9 +95,9 @@ class FullBackup(Backup):
 
     def new_incremental_backup(self) -> IncrementalBackup:
         """
-        Adds a new backup the full backup. (You still have to the DB stuff manually!)
+        Adds a new backup to the full backup. (You still have to the DB stuff manually!)
         :return: created backup
         """
-        inc = IncrementalBackup(self)
+        inc = IncrementalBackup(base_backup=self, file_type=self.file_type)
         self.incremental_backups.append(inc)
         return inc
