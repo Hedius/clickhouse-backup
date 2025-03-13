@@ -18,7 +18,7 @@ Backing up all replicas is also possible of course.
 * Creates full and incremental backups. You can specify the number of incremental backups to keep.
 * Automatically removes old backups.
 
-File and disk backups are created as `tar.gz` archives. Backups to S3 are not archived.
+File and disk backups are created as `zip` archives. Backups to S3 are not archived.
 So the files of the backup are directly written to S3. ClickHouse does support both for any storage.
 Please open an issue if you need different behaviour.
 

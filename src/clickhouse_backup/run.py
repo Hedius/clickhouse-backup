@@ -173,7 +173,7 @@ def main(ctx, config_folder):
         backend = S3Backend(ch.s3_endpoint, ch.s3_bucket, ch.s3_access_id,
                             ch.s3_secret_access_key)
     else:
-        file_type = 'tar.gz'
+        file_type = 'zip'
         backend = DiskBackend(ch.backup_dir)
     existing_backups = parse_existing_backups(backend, file_type)
     ctx.obj = CtxArgs(
