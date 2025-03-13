@@ -271,7 +271,7 @@ def list_command(ctx):
             'E.g. for the newest one:\n'
         )
         output += click.style(
-            f'clickhouse-backup -c {args.config_folder} restore -f {newest_backup.path}',
+            f'clickhouse-backup -c {args.config_folder} restore {newest_backup.path}',
             fg='green'
         )
         click.echo(output)
