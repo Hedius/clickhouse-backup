@@ -6,7 +6,9 @@ A backup tool for ClickHouse which uses the native
 [BACKUP](https://clickhouse.com/docs/en/operations/backup)
 command to create backups and to restore from them.
 
-Meant for single-node setups. Not tested with clusters.
+Works with single-node and cluster setups.
+For clusters backing up one replica per shard should be enough.
+Backing up all replicas is also possible of course.
 
 ![Screenshot usage](.img/screenshot_usage.png)
 
