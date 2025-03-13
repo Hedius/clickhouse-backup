@@ -11,5 +11,5 @@ jobs:
           SSH_PRIVATE_KEY: ${{ secrets.GITLAB_SSH_PRIVATE_KEY }}
           SSH_KNOWN_HOST: ${{ secrets.SSH_KNOWN_HOSTS }}
         with:
-          source-repo: 'git@github.com:Hedius/clickhouse-backup.git'
+          source-repo: 'https://github.com/Hedius/clickhouse-backup.git'
           destination-repo: 'git@gitlab.com:Hedius/clickhouse-backup.git'
