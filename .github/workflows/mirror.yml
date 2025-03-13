@@ -5,13 +5,11 @@ on: [ push, delete ]
 jobs:
   to_gitlab:
     runs-on: ubuntu-latest
-    steps: # <-- must use actions/checkout before mirroring!
-      - uses: actions/checkout@v3
+    steps:
+      - uses: wearerequired/git-mirror-action@v1
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.GITLAB_SSH_PRIVATE_KEY }}
+          SSH_KNOWN_HOSTS: ${{ secrets.SSH_KNOWN_HOSTS }}
         with:
-          fetch-depth: 0
-      - uses: pixta-dev/repository-mirroring-action@v1
-        with:
-          target_repo_url:
-            git@gitlab.com:Hedius/clickhouse-backup.git
-          ssh_private_key: # <-- use 'secrets' to pass credential information.
-            ${{ secrets.GITLAB_SSH_PRIVATE_KEY }}
+          source-repo: 'https://github.com/Hedius/clickhouse-backup.git'
+          destination-repo: 'git@gitlab.com:Hedius/clickhouse-backup.git'

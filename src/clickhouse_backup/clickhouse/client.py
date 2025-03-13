@@ -3,6 +3,7 @@ ClickHouse client / db actions / interactions
 """
 import os
 import time
+from abc import ABC
 from enum import Enum
 from pathlib import Path
 from typing import Optional
@@ -20,19 +21,21 @@ class BackupTarget(Enum):
     FILE = 'File'
     DISK = 'Disk'
     S3 = 'S3'
+    S3_DISK = 'S3-Disk'
 
 
-class Client:
+class Client(ABC):
     """
     ClickHouse client. uses the native protocol.
     """
 
-    def __init__(self, host: str = 'localhost', port: str = '9000',
+    def __init__(self, *, host: str = 'localhost', port: str = '9000',
                  user: str = 'default', password: str = '',
                  backup_target: BackupTarget = BackupTarget.FILE,
                  backup_dir: Optional[Path] = None,
                  disk: Optional[str] = None,
                  s3_endpoint: Optional[str] = None,
+                 s3_bucket: Optional[str] = None,
                  s3_access_key_id: Optional[str] = None,
                  s3_secret_access_key: Optional[str] = None):
         """
@@ -45,6 +48,7 @@ class Client:
         :param backup_dir: default: None
         :param disk: default: None
         :param s3_endpoint: default: None
+        :param s3_bucket: default: None
         :param s3_access_key_id: default: None
         :param s3_secret_access_key: default: None
         """
@@ -54,12 +58,14 @@ class Client:
                     raise ValueError('backup_dir must be provided when using File backup target')
                 if not os.path.isdir(backup_dir):
                     raise FileNotFoundError(f'backup_dir {backup_dir} does not exist!')
-            case BackupTarget.DISK:
+            case BackupTarget.DISK | BackupTarget.S3_DISK:
                 if not disk:
                     raise ValueError('disk must be provided when using Disk backup target')
-            case BackupTarget.S3:
+            case BackupTarget.S3 | BackupTarget.S3_DISK:
                 if not s3_endpoint:
                     raise ValueError('s3_endpoint must be provided when using S3 backup target')
+                if not s3_bucket:
+                    raise ValueError('s3_bucket must be provided when using S3 backup target')
                 if not s3_access_key_id:
                     raise ValueError(
                         's3_access_key_id must be provided when using S3 backup target')
@@ -76,9 +82,10 @@ class Client:
         self.backup_target = backup_target
         self.backup_dir = backup_dir
         self._disk = disk
-        self._s3_endpoint = s3_endpoint
-        self._s3_access_key_id = s3_access_key_id
-        self._s3_secret_access_key = s3_secret_access_key
+        self.s3_endpoint = s3_endpoint
+        self.s3_bucket = s3_bucket
+        self.s3_access_id = s3_access_key_id
+        self.s3_secret_access_key = s3_secret_access_key
 
     @property
     def client(self) -> ClickHouseClient:
@@ -105,15 +112,15 @@ class Client:
             case BackupTarget.FILE:
                 # assuming a backup disk is defined.
                 return f"File('{file_path}')"
-            case BackupTarget.DISK:
+            case BackupTarget.DISK | BackupTarget.S3_DISK:
                 return f"Disk('{self._disk}', '{file_path}')"
             case BackupTarget.S3:
-                return (f"S3('{self._s3_endpoint}/{file_path}', "
-                        f"'{self._s3_access_key_id}', '{self._s3_secret_access_key}')")
+                return (f"S3('{self.s3_endpoint}/{self.s3_bucket}/{file_path}', "
+                        f"'{self.s3_access_id}', '{self.s3_secret_access_key}')")
             case _:
                 raise ValueError(f'Invalid backup target: {self.backup_target}')
 
-    def _backup_command(self,
+    def _backup_command(self, *,
                         backup: Backup,
                         is_backup: bool = True,
                         table: Optional[str] = None,
@@ -170,7 +177,7 @@ class Client:
         # todo... will someone inject a query here? :) maybe should use the driver correctly hmmm
         return query
 
-    def backup(self,
+    def backup(self, *,
                backup: Backup,
                table: Optional[str] = None,
                dictionary: Optional[str] = None,
@@ -226,7 +233,7 @@ class Client:
             break
         return result
 
-    def restore(self,
+    def restore(self, *,
                 backup: Backup,
                 table: Optional[str] = None,
                 dictionary: Optional[str] = None,

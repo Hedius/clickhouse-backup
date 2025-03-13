@@ -6,7 +6,9 @@ A backup tool for ClickHouse which uses the native
 [BACKUP](https://clickhouse.com/docs/en/operations/backup)
 command to create backups and to restore from them.
 
-Meant for single-node setups. Not tested with clusters.
+Works with single-node and cluster setups.
+For clusters backing up one replica per shard should be enough.
+Backing up all replicas is also possible of course.
 
 ![Screenshot usage](.img/screenshot_usage.png)
 
@@ -16,7 +18,9 @@ Meant for single-node setups. Not tested with clusters.
 * Creates full and incremental backups. You can specify the number of incremental backups to keep.
 * Automatically removes old backups.
 
-File and disk operations are fully supported. S3 is not tested at the moment.
+File and disk backups are created as `tar.gz` archives. Backups to S3 are not archived.
+So the files of the backup are directly written to S3. ClickHouse does support both for any storage.
+Please open an issue if you need different behaviour.
 
 ## Installation
 
@@ -104,7 +108,10 @@ password = ''
 dir = ''
 
 [backup]
-# the target to use for the backup: File, Disk or S3
+# the target to use for the backup: File, S3, Disk, or S3-Disk
+# Disk uses a local CH-Disk and S3-Disk a S3 disk....
+# A disk is automatically defined for /var/backups/clickhouse when using the .deb
+# If you want to use a Disk for S3, you have to manually define it.
 target = 'Disk'
 # the directory to store the backups in. Used for File and Disk targets to check
 # for existing backups and to delete old backups.
@@ -113,6 +120,7 @@ dir = ''
 
 # The disk for the Disk target.
 # Not set by default. MUST BE SET! (except for File and S3)
+# Needed Disk/S3-Disk
 disk = ''
 
 # databases to ignore in the backup.
@@ -135,6 +143,7 @@ max_full_backups = 2
 [backup.s3]
 # s3 config for the S3 target.
 endpoint = ''
+bucket = ''
 access_key_id = ''
 secret_access_key = ''
 ```
@@ -188,15 +197,86 @@ Options:
 ### Restore from a backup
 
 ```
-Usage: clickhouse-backup restore [OPTIONS]
+Usage: clickhouse-backup restore [OPTIONS] BACKUP
 
   Generate the restore command for the given backup. Use the command in
   clickhouse-client to restore the backup. You can use the output of the list
   command to view available backups.
 
 Options:
-  -f, --file TEXT  The file to restore. Name has to fully match!  [required]
   --help           Show this message and exit.
+```
+
+## Example Disk Configuration
+
+If you want to use the **Disk** or **S3-Disk** backend, you have to define a storage in
+`/etc/clickhouse-server/config.d`.
+Furthermore, when using **File** backups you also have to configure the allowed path.
+
+### Local Disk
+
+Defines a local disk for backups to `/var/backups/clickhouse`
+
+```xml
+<clickhouse>
+    <storage_configuration>
+        <disks>
+            <CHBackup>
+                <type>local</type>
+                <path>/var/backups/clickhouse/</path>
+            </CHBackup>
+        </disks>
+    </storage_configuration>
+    <backups>
+        <allowed_disk>CHBackup</allowed_disk>
+        <allowed_path>/var/backups/clickhouse/</allowed_path>
+    </backups>
+</clickhouse>
+```
+
+### S3 Disk / Encrypted Backups
+
+The following config snippet describes how a S3 disk with encryption can be configured.
+Encryption is optional of course. You can also use the same logic to encrypt any other disk.
+
+```xml
+<clickhouse>
+    <storage_configuration>
+        <disks>
+            <S3Backup>
+                <type>s3_plain</type>
+                <endpoint>https://s3.example.com/bucketName</endpoint>
+                <access_key_id>FIX_ME</access_key_id>
+                <secret_access_key>FIX_ME</secret_access_key>
+                <!-- Set this to true! otherwise CH does not start if the S3 is not reachable! -->
+                <skip_access_check>true</skip_access_check>
+            </S3Backup>
+            <!-- If you want to encrypt backups, encrypted disks can be used to wrap the S3, works for any disk... -->
+            <S3Encrypted>
+                <type>encrypted</type>
+                <disk>S3Backup</disk>
+                <!-- read docs... 16 char ascii key etc. -->
+                <key>FIX_ME</key>
+            </S3Encrypted>
+        </disks>
+        <policies>
+            <s3>
+                <volumes>
+                    <main>
+                        <disk>S3Backup</disk>
+                    </main>
+                </volumes>
+            </s3>
+        </policies>
+    </storage_configuration>
+
+    <!-- Allow backups to both disk -->
+    <!-- For encrypted: S3Encrypted as a disk, plain S3Backup. -->
+    <backups>
+        <allowed_disk>S3Backup</allowed_disk>
+        <allowed_disk>S3Encrypted</allowed_disk>
+    </backups>
+</clickhouse>
 ```
 
 ## License
