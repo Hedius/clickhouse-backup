@@ -2,7 +2,7 @@ Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
 Source: https://github.com/Hedius/clickhouse-backup
 
 Files: *
-Copyright: 2024, Florian "Hedius" Derler
+Copyright: 2025, Florian "Hedius" Derler
 License: GPL-3+
  This program is free software; you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
