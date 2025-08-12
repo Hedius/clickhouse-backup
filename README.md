@@ -28,7 +28,7 @@ A debian package is provided for each release.
 You can download them from the release page and from the project's
 [GitLab CI](https://gitlab.com/Hedius/clickhouse-backup/-/packages).
 
-The package is built for Debian 12 (bookworm). It should work on other Debian-based distributions as well.
+The package is built for Debian 12 (bookworm) and above. It should work on other Debian-based distributions as well.
 A recent clickhouse-server is required on the same machine. Using the official ClickHouse repository is recommended.
 
 The configuration is stored in `/etc/clickhouse-backup`.

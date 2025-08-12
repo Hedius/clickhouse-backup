@@ -1,7 +1,7 @@
 # include:
 #   - template: Code-Quality.gitlab-ci.yml
 
-image: python:3.11
+image: python:3.13
 stages:
   - code quality
   - build
