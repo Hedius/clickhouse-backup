@@ -11,7 +11,7 @@ pylama:
   stage: code quality
   before_script:
     - pip3 install --break-system-packages -r requirements.txt
-    - pip3 install pylama[all]
+    - pip3 install setuptools pylama[all]
   script:
     - |
       pylama -l mccabe,pycodestyle,pyflakes,pylint,isort src \
