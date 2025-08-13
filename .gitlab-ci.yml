@@ -20,7 +20,7 @@ pylama:
 #   stage: code quality
 
 .build: &build
-  image: debian:stable
+  image: debian:trixie
   stage: build
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH || $CI_COMMIT_TAG
