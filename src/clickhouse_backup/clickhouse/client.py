@@ -229,7 +229,7 @@ class Client(ABC):
             if status == 'BACKUP_CREATED':
                 logger.info(f'Backup {backup_id} has been created. Status: {status}')
             else:
-                logger.critical(f'Failed to create backup {backup_id} with error {error}')
+                raise RuntimeError(f'Failed to create backup {backup_id} with error {error}')
             break
         return result
 
